@@ -18,7 +18,7 @@ import {
   ConversationError,
   Err,
   getLargeNonAnthropicWhitelistedModel,
-  GPT_4O_MINI_MODEL_ID,
+  GHS_OSS_120B_INSTRUCT_MODEL_ID,
   Ok,
 } from "@app/types";
 import type { AgentLoopArgs } from "@app/types/assistant/agent_run";
@@ -102,8 +102,8 @@ export async function ensureConversationTitle(
   return title;
 }
 
-const PROVIDER_ID: ModelProviderIdType = "openai";
-const MODEL_ID: ModelIdType = GPT_4O_MINI_MODEL_ID;
+const PROVIDER_ID: ModelProviderIdType = "ghs";
+const MODEL_ID: ModelIdType = GHS_OSS_120B_INSTRUCT_MODEL_ID;
 
 const FUNCTION_NAME = "update_title";
 

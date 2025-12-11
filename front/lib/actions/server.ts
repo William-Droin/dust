@@ -138,7 +138,7 @@ export async function runActionStreamed(
 
   const prodCredentials = await prodAPICredentialsForOwner(owner);
   const api = new DustAPI(
-    apiConfig.getDustAPIConfig(),
+    apiConfig.getCoreAPIConfig(),
     {
       ...prodCredentials,
       extraHeaders: {
@@ -154,6 +154,7 @@ export async function runActionStreamed(
     logActionError(loggerArgs, tags, "run_error", { error: res.error });
     return new Err(res.error);
   }
+  
 
   // Don't await the dustRunid promise before you are done iterating on the eventStream,
   // it will block the event stream, which is in charge of resolving that promise.
@@ -179,6 +180,10 @@ export async function runActionStreamed(
         "Failed to get runId for runActionStreamed"
       );
     });
+
+    console.log("@@====================@@")
+    console.log(eventStream)
+    console.log(dustRunId)
 
   const streamEvents = async function* () {
     for await (const event of eventStream) {

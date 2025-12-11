@@ -4,6 +4,7 @@ const TIKTOKEN_TOKENIZER_BASE = [
   "p50k_base",
   "r50k_base",
   "anthropic_base",
+  "o200k_harmony",
 ] as const;
 
 export type TiktokenTokenizerBase = (typeof TIKTOKEN_TOKENIZER_BASE)[number];

@@ -21,3 +21,4 @@ tsconfig.tsbuildinfo
 front/.npm-cache
 CLAUDE.md
 AGENTS.md
+.env

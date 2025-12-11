@@ -178,6 +178,18 @@ export const MODEL_PROVIDER_CONFIGS: Record<string, ProviderConfig> = {
       </>
     ),
   },
+  ghs: {
+    title: "GHS",
+    fields: [{ name: "api_key", placeholder: "GHS API Key" }],
+    instructions: (
+      <>
+        <p>To use GHS models you must provide your API key.</p>
+        <p className="mt-2">
+          We'll never use your API key for anything other than to run your apps.
+        </p>
+      </>
+    ),
+  },
   xai: {
     title: "xAI",
     fields: [{ name: "api_key", placeholder: "xAI API Key" }],

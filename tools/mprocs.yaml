@@ -7,6 +7,8 @@
 # you need to restart front-workers after sdks-js is loaded: select front-workers in the mprocs window and press r
 # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
 
+mouse: true
+
 procs:
   core:
     cwd: "<CONFIG_DIR>/../core"
@@ -39,6 +41,7 @@ procs:
       echo "Waiting for sdks-js to compile..."
       echo "Expecting file: $READY_FILE"
       while [ ! -f "$READY_FILE" ]; do sleep 1; done
+      sleep 10
       echo "sdks-js ready. Starting front."
       source ~/.nvm/nvm.sh && nvm install && npm install && ./admin/dev.sh
 

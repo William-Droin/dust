@@ -1,7 +1,7 @@
 import { Authenticator } from "@app/lib/auth";
 import type { SessionWithUser } from "@app/lib/iam/provider";
 import { Plan } from "@app/lib/models/plan";
-import { isFreePlan } from "@app/lib/plans/plan_codes";
+import { FREE_UPGRADED_PLAN_CODE, isFreePlan } from "@app/lib/plans/plan_codes";
 import { GroupResource } from "@app/lib/resources/group_resource";
 import { MCPServerViewResource } from "@app/lib/resources/mcp_server_view_resource";
 import { SpaceResource } from "@app/lib/resources/space_resource";
@@ -17,8 +17,8 @@ export async function createWorkspace(session: SessionWithUser) {
   return createWorkspaceInternal({
     name: externalUser.nickname,
     isBusiness: false,
-    planCode: null,
-    endDate: null,
+    planCode: FREE_UPGRADED_PLAN_CODE,
+    endDate: new Date("2040-07-12T00:00:00"),
   });
 }
 

@@ -19,6 +19,7 @@ export * from "./assistant/models/fireworks";
 export * from "./assistant/models/fireworks";
 export * from "./assistant/models/fireworks";
 export * from "./assistant/models/fireworks";
+export * from "./assistant/models/ghs";
 export * from "./assistant/models/google_ai_studio";
 export * from "./assistant/models/mistral";
 export * from "./assistant/models/models";

@@ -1,6 +1,7 @@
 use crate::providers::anthropic::anthropic::AnthropicProvider;
 use crate::providers::azure_openai::AzureOpenAIProvider;
 use crate::providers::embedder::Embedder;
+use crate::providers::ghs::GhsProvider;
 use crate::providers::google_ai_studio::GoogleAiStudioProvider;
 use crate::providers::llm::{TokenizerSingleton, LLM};
 use crate::providers::mistral::MistralProvider;
@@ -37,6 +38,7 @@ pub enum ProviderID {
     Fireworks,
     Xai,
     Noop,
+    Ghs,
 }
 
 impl fmt::Display for ProviderID {
@@ -52,6 +54,7 @@ impl fmt::Display for ProviderID {
             ProviderID::Fireworks => write!(f, "fireworks"),
             ProviderID::Xai => write!(f, "xai"),
             ProviderID::Noop => write!(f, "noop"),
+            ProviderID::Ghs => write!(f, "ghs"),
         }
     }
 }
@@ -70,9 +73,10 @@ impl FromStr for ProviderID {
             "fireworks" => Ok(ProviderID::Fireworks),
             "xai" => Ok(ProviderID::Xai),
             "noop" => Ok(ProviderID::Noop),
+            "ghs" => Ok(ProviderID::Ghs),
             _ => Err(ParseError::with_message(
                 "Unknown provider ID \
-                 (possible values: openai, azure_openai, anthropic, mistral, google_ai_studio, togetherai, deepseek, fireworks, xai, noop)",
+                 (possible values: openai, azure_openai, anthropic, mistral, google_ai_studio, togetherai, deepseek, fireworks, xai, noop, ghs)",
             ))?,
         }
     }
@@ -177,5 +181,6 @@ pub fn provider(t: ProviderID) -> Box<dyn Provider + Sync + Send> {
         ProviderID::Fireworks => Box::new(FireworksProvider::new()),
         ProviderID::Xai => Box::new(XaiProvider::new()),
         ProviderID::Noop => Box::new(NoopProvider::new()),
+        ProviderID::Ghs => Box::new(GhsProvider::new()),
     }
 }

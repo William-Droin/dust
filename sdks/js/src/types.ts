@@ -31,6 +31,7 @@ const ModelProviderIdSchema = FlexibleEnumSchema<
   | "fireworks"
   | "xai"
   | "noop"
+  | "ghs"
 >();
 
 const ModelLLMIdSchema = FlexibleEnumSchema<
@@ -84,6 +85,7 @@ const ModelLLMIdSchema = FlexibleEnumSchema<
   | "grok-4-fast-non-reasoning-latest"
   | "grok-4-fast-reasoning-latest"
   | "noop" // Noop
+  | "openai/gpt-oss-120b" // ghs
 >();
 
 const EmbeddingProviderIdSchema = FlexibleEnumSchema<"openai" | "mistral">();

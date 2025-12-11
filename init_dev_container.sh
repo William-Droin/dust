@@ -2,6 +2,17 @@
 
 ## Initializing PostgresSQL databases
 
+export FRONT_DATABASE_URI=postgresql://dev:dev@localhost:5432/dust_front;
+export QDRANT_CLUSTER_0_URL=http://localhost:6334;
+export QDRANT_CLUSTER_0_API_KEY=null;
+export ELASTICSEARCH_PASSWORD="changeme";
+export ELASTICSEARCH_URL="http://elastic:${ELASTICSEARCH_PASSWORD}@localhost:9200";
+export ELASTICSEARCH_USERNAME="elastic";
+export DUST_REGION=europe-west1;
+export CONNECTORS_DATABASE_URI=postgres://dev:dev@localhost:5432/dust_connectors;
+export CORE_DATABASE_URI=postgresql://dev:dev@localhost:5432/dust_api;
+export OAUTH_DATABASE_URI=postgresql://dev:dev@localhost:5432/dust_oauth;
+
 
 if [[ "$1" == "--reset-db" ]]; then
     psql "postgres://dev:dev@localhost:5432/" -c "DROP DATABASE dust_api;"

@@ -116,6 +116,9 @@ import {
   GROK_4_MODEL_CONFIG,
   GROK_4_MODEL_ID,
 } from "./xai";
+import { GHS_OSS_120B_INSTRUCT_MODEL_CONFIG, 
+  GHS_OSS_120B_INSTRUCT_MODEL_ID 
+} from "@app/types/assistant/models/ghs";
 
 export const MODEL_IDS = [
   GPT_3_5_TURBO_MODEL_ID,
@@ -168,6 +171,7 @@ export const MODEL_IDS = [
   GROK_4_FAST_REASONING_MODEL_ID,
   GROK_4_FAST_NON_REASONING_MODEL_ID,
   NOOP_MODEL_ID,
+  GHS_OSS_120B_INSTRUCT_MODEL_ID,
 ] as const;
 
 export const isModelId = (modelId: string): modelId is ModelIdType =>
@@ -224,5 +228,6 @@ export const SUPPORTED_MODEL_CONFIGS: ModelConfigurationType[] = [
   GROK_4_MODEL_CONFIG,
   GROK_4_FAST_NON_REASONING_MODEL_CONFIG,
   NOOP_MODEL_CONFIG,
+  GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
 ];
 export default SUPPORTED_MODEL_CONFIGS;

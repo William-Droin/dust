@@ -59,6 +59,11 @@ export async function runMultiActionsAgent(
     context: options.context,
   });
 
+  console.log("@@@@@@@@@@@@@@")
+  console.log(llm)
+  console.log(config.modelId)
+  console.log(options.context)
+
   if (llm) {
     const actions: NonNullable<LLMOutput["actions"]> = [];
     let generation = "";

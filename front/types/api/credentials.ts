@@ -18,6 +18,7 @@ const {
   DUST_MANAGED_FIRECRAWL_API_KEY = "",
   DUST_MANAGED_ELEVENLABS_API_KEY = "",
   DUST_REGION = "",
+  DUST_MANAGED_GHS_API_KEY="",
 } = process.env;
 
 export const credentialsFromProviders = (
@@ -81,6 +82,9 @@ export const credentialsFromProviders = (
       case "firecrawl":
         credentials["FIRECRAWL_API_KEY"] = config.api_key;
         break;
+      case "ghs":
+        credentials["GHS_API_KEY"] = config.api_key;
+        break;
     }
   });
   return credentials;
@@ -106,5 +110,6 @@ export const dustManagedCredentials = (): CredentialsType => {
     XAI_API_KEY: DUST_MANAGED_XAI_API_KEY,
     FIRECRAWL_API_KEY: DUST_MANAGED_FIRECRAWL_API_KEY,
     ELEVENLABS_API_KEY: DUST_MANAGED_ELEVENLABS_API_KEY,
+    GHS_API_KEY: DUST_MANAGED_GHS_API_KEY,
   };
 };

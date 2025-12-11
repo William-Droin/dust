@@ -31,15 +31,15 @@ const pinoAdapter: Logger = {
 };
 
 // Install once per process — before creating Worker/Client.
-Runtime.install({
-  logger: pinoAdapter,
-  telemetryOptions: {
-    metrics: {
-      // Datadog Agent OTLP gRPC (4317).
-      otel: { url: "grpc://datadog-agent.default.svc.cluster.local:4317" },
-    },
-  },
-});
+// Runtime.install({
+//   logger: pinoAdapter,
+//   telemetryOptions: {
+//     metrics: {
+//       // Datadog Agent OTLP gRPC (4317).
+//       otel: { url: "grpc://datadog-agent.default.svc.cluster.local:4317" },
+//     },
+//   },
+// });
 
 async function runWorkers(workers: WorkerName[]) {
   for (const worker of workers) {

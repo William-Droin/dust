@@ -85,6 +85,14 @@ export const modelProviders: ModelProvider[] = [
     chat: true,
     embed: false,
   },
+    {
+    providerId: "ghs",
+    name: "GHS",
+    built: true,
+    enabled: false,
+    chat: true,
+    embed: false,
+  },
 ];
 
 export const APP_MODEL_PROVIDER_IDS: string[] = [
@@ -97,6 +105,7 @@ export const APP_MODEL_PROVIDER_IDS: string[] = [
   "deepseek",
   "fireworks",
   "xai",
+  "ghs",
 ] as const;
 
 type ServiceProvider = {

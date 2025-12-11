@@ -19,7 +19,7 @@
     "discord:register-commands": "tsx ./scripts/register-discord-commands.ts"
   },
   "dependencies": {
-    "@dust-tt/client": "file:../sdks/js",
+    "@dust-tt/client": "^1.1.19",
     "@google-cloud/bigquery": "^7.9.2",
     "@mendable/firecrawl-js": "^1.29.1",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -71,7 +71,7 @@
     "pino-pretty": "^10.0.0",
     "redis": "^4.6.10",
     "remove-markdown": "^0.5.0",
-    "sequelize": "^6.31.0",
+    "sequelize": "^6.37.7",
     "slackify-markdown": "^4.4.0",
     "snowflake-sdk": "^2.0.2",
     "talisman": "^1.1.4",

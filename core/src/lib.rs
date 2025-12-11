@@ -81,6 +81,7 @@ pub mod providers {
     }
     pub mod deepseek;
     pub mod fireworks;
+    pub mod ghs;
     pub mod google_ai_studio;
     pub mod helpers;
     pub mod noop;

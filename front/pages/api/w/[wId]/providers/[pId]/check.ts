@@ -303,6 +303,30 @@ async function handler(
           }
           return;
 
+        case "ghs":
+          const testGhs = await fetch(
+            `https://openrouter.ai/api/v1/chat/completions`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${config.api_key}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "openai/gpt-oss-120b",
+                messages: [{ role: "user", content: "Hello, GHS" }],
+              }),
+            }
+          );
+          if (!testGhs.ok) {
+            const err = await testGhs.json();
+            res.status(400).json({ ok: false, error: err.error });
+          } else {
+            await testGhs.json();
+            res.status(200).json({ ok: true });
+          }
+          return;
+
         default:
           return apiError(req, res, {
             status_code: 404,

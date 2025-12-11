@@ -8,6 +8,7 @@ pub enum TiktokenTokenizerBase {
     P50kBase,
     R50kBase,
     AnthropicBase,
+    O200kHarmony,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

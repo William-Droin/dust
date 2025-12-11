@@ -16,6 +16,7 @@ export const MODEL_PROVIDER_IDS = [
   "fireworks",
   "xai",
   "noop",
+  "ghs",
 ] as const;
 
 export function getProviderDisplayName(
@@ -40,6 +41,8 @@ export function getProviderDisplayName(
       return "xAI";
     case "noop":
       return "noop";
+    case "ghs":
+      return "GHS";
     default:
       return providerId;
   }

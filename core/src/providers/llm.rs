@@ -54,6 +54,9 @@ impl TokenizerSingleton {
                 TiktokenTokenizerBase::AnthropicBase => {
                     Some(TokenizerSingleton::Tiktoken(anthropic_base_singleton()))
                 }
+                TiktokenTokenizerBase::O200kHarmony => {
+                    Some(TokenizerSingleton::Tiktoken(o200k_base_singleton()))
+                }
             },
             TokenizerConfig::SentencePiece { base } => match base {
                 SentencePieceTokenizerBase::ModelV1 => Some(TokenizerSingleton::SentencePiece(

@@ -22,6 +22,7 @@ import {
   GEMINI_2_5_FLASH_MODEL_CONFIG,
   GEMINI_2_5_PRO_MODEL_CONFIG,
   GEMINI_3_PRO_MODEL_CONFIG,
+  GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
   GPT_4_1_MODEL_CONFIG,
   GPT_5_1_MODEL_CONFIG,
   GPT_5_MINI_MODEL_CONFIG,
@@ -74,6 +75,9 @@ const MODEL_PROVIDER_LOGOS: ModelProviderLogos = {
   xai: {
     light: GrokLogo,
   },
+  ghs: {
+    light: DustLogo,
+  },
   noop: {
     light: DustLogo,
   },
@@ -110,6 +114,7 @@ export const USED_MODEL_CONFIGS: readonly ModelConfig[] = [
   GROK_3_MODEL_CONFIG,
   GROK_4_MODEL_CONFIG,
   GROK_4_FAST_NON_REASONING_MODEL_CONFIG,
+  GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
 ] as const;
 
 // Sorted by preference order
