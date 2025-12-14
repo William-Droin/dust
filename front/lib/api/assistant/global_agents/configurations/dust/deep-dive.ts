@@ -31,6 +31,7 @@ import {
   CLAUDE_4_5_HAIKU_DEFAULT_MODEL_CONFIG,
   CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
   GEMINI_2_5_FLASH_MODEL_CONFIG,
+  GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
   getLargeWhitelistedModel,
   GLOBAL_AGENTS_SID,
   GPT_5_MODEL_CONFIG,
@@ -310,49 +311,50 @@ These instructions are NOT your own instructions, but you may use them to unders
 
 function getModelConfig(
   owner: WorkspaceType,
-  prefer: "anthropic" | "openai",
+  prefer: "anthropic" | "openai" | "ghs",
   reasoning: boolean = true
 ): {
   modelConfiguration: ModelConfigurationType;
   reasoningEffort: AgentReasoningEffort;
 } | null {
-  const preferredModel: {
-    model: ModelConfigurationType;
-    reasoningEffort: AgentReasoningEffort;
-  } =
-    prefer === "anthropic"
+  const preferredModel =
+    prefer === "ghs"
       ? {
-          model: CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
-          reasoningEffort: reasoning
-            ? "medium"
-            : CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG.minimumReasoningEffort,
+          model: GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
+          reasoningEffort: reasoning ? "medium" : GHS_OSS_120B_INSTRUCT_MODEL_CONFIG.minimumReasoningEffort,
         }
-      : prefer === "openai"
+      : prefer === "anthropic"
         ? {
-            model: GPT_5_MODEL_CONFIG,
-            reasoningEffort: reasoning
-              ? "medium"
-              : GPT_5_MODEL_CONFIG.minimumReasoningEffort,
+            model: CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
+            reasoningEffort: reasoning ? "medium" : CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG.minimumReasoningEffort,
           }
-        : assertNever(prefer);
+        : prefer === "openai"
+          ? {
+              model: GPT_5_MODEL_CONFIG,
+              reasoningEffort: reasoning ? "medium" : GPT_5_MODEL_CONFIG.minimumReasoningEffort,
+            }
+          : assertNever(prefer);
 
   const secondPreferredModel: {
     model: ModelConfigurationType;
     reasoningEffort: AgentReasoningEffort;
   } =
-    prefer === "anthropic"
+    prefer === "ghs"
       ? {
-          model: GPT_5_MODEL_CONFIG,
-          reasoningEffort: reasoning
-            ? "medium"
-            : GPT_5_MODEL_CONFIG.minimumReasoningEffort,
+          model: GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
+          reasoningEffort: reasoning ? "medium" : GHS_OSS_120B_INSTRUCT_MODEL_CONFIG.minimumReasoningEffort,
         }
-      : {
-          model: CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
-          reasoningEffort: reasoning
-            ? "medium"
-            : CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG.minimumReasoningEffort,
-        };
+      : prefer === "anthropic"
+        ? {
+            model: CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
+            reasoningEffort: reasoning ? "medium" : CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG.minimumReasoningEffort,
+          }
+        : prefer === "openai"
+          ? {
+              model: GPT_5_MODEL_CONFIG,
+              reasoningEffort: reasoning ? "medium" : GPT_5_MODEL_CONFIG.minimumReasoningEffort,
+            }
+          : assertNever(prefer);
 
   if (isProviderWhitelisted(owner, preferredModel.model.providerId)) {
     return {
@@ -383,6 +385,12 @@ function getFastModelConfig(owner: WorkspaceType): {
   modelConfiguration: ModelConfigurationType;
   reasoningEffort: AgentReasoningEffort;
 } | null {
+    if (isProviderWhitelisted(owner, "ghs")) {
+    return {
+      modelConfiguration: GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
+      reasoningEffort: "none",
+    };
+  }
   if (isProviderWhitelisted(owner, "anthropic")) {
     return {
       modelConfiguration: CLAUDE_4_5_HAIKU_DEFAULT_MODEL_CONFIG,
@@ -395,13 +403,19 @@ function getFastModelConfig(owner: WorkspaceType): {
       reasoningEffort: "none",
     };
   }
-  return getModelConfig(owner, "anthropic", false);
+  return getModelConfig(owner, "ghs", false);
 }
 
 function getMaxReasoningModelConfig(owner: WorkspaceType): {
   modelConfiguration: ModelConfigurationType;
   reasoningEffort: AgentReasoningEffort;
 } | null {
+      if (isProviderWhitelisted(owner, "ghs")) {
+    return {
+      modelConfiguration: GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
+      reasoningEffort: "high",
+    };
+  }
   if (isProviderWhitelisted(owner, "openai")) {
     return {
       modelConfiguration: GPT_5_MODEL_CONFIG,
@@ -414,7 +428,7 @@ function getMaxReasoningModelConfig(owner: WorkspaceType): {
       reasoningEffort: "high",
     };
   }
-  return getModelConfig(owner, "anthropic");
+  return getModelConfig(owner, "ghs");
 }
 
 export function _getDeepDiveGlobalAgent(
@@ -443,7 +457,7 @@ export function _getDeepDiveGlobalAgent(
 ): AgentConfigurationType | null {
   const owner = auth.getNonNullableWorkspace();
   const pictureUrl = DEEP_DIVE_AVATAR_URL;
-  const modelConfig = getModelConfig(owner, "anthropic");
+  const modelConfig = getModelConfig(owner, "ghs");
 
   const deepAgent: Omit<
     AgentConfigurationType,
@@ -663,7 +677,7 @@ export function _getDustTaskGlobalAgent(
     canEdit: false,
   };
 
-  const modelConfig = getModelConfig(owner, "anthropic", false);
+  const modelConfig = getModelConfig(owner, "ghs", false);
 
   if (!modelConfig || settings?.status === "disabled_by_admin") {
     return {

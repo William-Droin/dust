@@ -57,6 +57,7 @@ export async function runMultiActionsAgent(
     modelId: config.modelId,
     temperature: config.temperature,
     context: options.context,
+    bypassFeatureFlag: true,
   });
 
   console.log("@@@@@@@@@@@@@@")

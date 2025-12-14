@@ -104,6 +104,7 @@ export async function getLLM(
       temperature,
       reasoningEffort,
       bypassFeatureFlag,
+      context,
     });
   }
 

@@ -18,8 +18,8 @@ export const GHS_OSS_120B_INSTRUCT_MODEL_CONFIG: ModelConfigurationType =
     isLatest: false,
     generationTokensCount: 2048,
     supportsVision: false,
-    minimumReasoningEffort: "none",
-    maximumReasoningEffort: "none",
-    defaultReasoningEffort: "none",
+    minimumReasoningEffort: "medium",
+    maximumReasoningEffort: "high",
+    defaultReasoningEffort: "medium",
     tokenizer: { type: "tiktoken", base: "o200k_harmony" },
   };
