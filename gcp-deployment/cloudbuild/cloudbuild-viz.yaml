@@ -1,0 +1,52 @@
+# Cloud Build configuration for Viz service (Next.js)
+# Builds: visualization UI
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: dust-images
+  _SERVICE_NAME: viz
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-viz'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'COMMIT_HASH=${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+      - '-f'
+      - 'dockerfiles/viz.Dockerfile'
+      - '.'
+    timeout: 1200s  # 20 minutes
+
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-viz'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
+    waitFor:
+      - 'build-viz'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+timeout: 1800s  # 30 minutes total
+
+# Trigger configuration (create via gcloud or console)
+# gcloud builds triggers create github \
+#   --name="build-viz" \
+#   --repository="projects/${PROJECT_ID}/locations/${_REGION}/connections/github/repositories/dust" \
+#   --branch-pattern="^main$" \
+#   --build-config="gcp-deployment/cloudbuild/cloudbuild-viz.yaml" \
+#   --included-files="viz/**,dockerfiles/viz.Dockerfile"

@@ -1,0 +1,52 @@
+# Cloud Build configuration for Connectors service (Node.js)
+# Builds: connectors-web and connectors-worker
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: dust-images
+  _SERVICE_NAME: connectors
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-connectors'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'COMMIT_HASH_LONG=${COMMIT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+      - '-f'
+      - 'dockerfiles/connectors.Dockerfile'
+      - '.'
+    timeout: 1800s  # 30 minutes
+
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-connectors'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
+    waitFor:
+      - 'build-connectors'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+
+timeout: 2400s  # 40 minutes total
+
+# Trigger configuration (create via gcloud or console)
+# gcloud builds triggers create github \
+#   --name="build-connectors" \
+#   --repository="projects/${PROJECT_ID}/locations/${_REGION}/connections/github/repositories/dust" \
+#   --branch-pattern="^main$" \
+#   --build-config="gcp-deployment/cloudbuild/cloudbuild-connectors.yaml" \
+#   --included-files="connectors/**,sdks/js/**,dockerfiles/connectors.Dockerfile"

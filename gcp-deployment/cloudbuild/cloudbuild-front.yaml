@@ -1,0 +1,87 @@
+# Cloud Build configuration for Front service (Next.js)
+# Builds: front web app and front-workers
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: dust-images
+  _SERVICE_NAME: front
+  # Build-time args (public env vars for Next.js)
+  _NEXT_PUBLIC_DUST_CLIENT_FACING_URL: https://YOUR_DOMAIN
+  _NEXT_PUBLIC_VIZ_URL: https://viz.YOUR_DOMAIN
+  _NEXT_PUBLIC_GTM_TRACKING_ID: ''
+  _NEXT_PUBLIC_ENABLE_BOT_CRAWLING: 'false'
+  _NEXT_PUBLIC_DATADOG_CLIENT_TOKEN: ''
+  _NEXT_PUBLIC_DATADOG_SERVICE: 'dust-front'
+  _NEXT_PUBLIC_POSTHOG_KEY: ''
+  _NEXT_PUBLIC_VIRTUOSO_LICENSE_KEY: ''
+  _NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER: ''
+  _NEXT_PUBLIC_NOVU_API_URL: ''
+  _NEXT_PUBLIC_NOVU_WEBSOCKET_API_URL: ''
+
+steps:
+  # Step 1: Get the commit hash
+  - name: 'gcr.io/cloud-builders/git'
+    id: 'get-commit-hash'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "COMMIT_HASH=${SHORT_SHA}" > /workspace/build.env
+        echo "COMMIT_HASH_LONG=${COMMIT_SHA}" >> /workspace/build.env
+
+  # Step 2: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-front'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        source /workspace/build.env
+        docker build \
+          --build-arg COMMIT_HASH=${SHORT_SHA} \
+          --build-arg COMMIT_HASH_LONG=${COMMIT_SHA} \
+          --build-arg NEXT_PUBLIC_VIZ_URL=${_NEXT_PUBLIC_VIZ_URL} \
+          --build-arg NEXT_PUBLIC_DUST_CLIENT_FACING_URL=${_NEXT_PUBLIC_DUST_CLIENT_FACING_URL} \
+          --build-arg NEXT_PUBLIC_GTM_TRACKING_ID=${_NEXT_PUBLIC_GTM_TRACKING_ID} \
+          --build-arg NEXT_PUBLIC_ENABLE_BOT_CRAWLING=${_NEXT_PUBLIC_ENABLE_BOT_CRAWLING} \
+          --build-arg NEXT_PUBLIC_DATADOG_CLIENT_TOKEN=${_NEXT_PUBLIC_DATADOG_CLIENT_TOKEN} \
+          --build-arg NEXT_PUBLIC_DATADOG_SERVICE=${_NEXT_PUBLIC_DATADOG_SERVICE} \
+          --build-arg NEXT_PUBLIC_POSTHOG_KEY=${_NEXT_PUBLIC_POSTHOG_KEY} \
+          --build-arg NEXT_PUBLIC_VIRTUOSO_LICENSE_KEY=${_NEXT_PUBLIC_VIRTUOSO_LICENSE_KEY} \
+          --build-arg NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=${_NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER} \
+          --build-arg NEXT_PUBLIC_NOVU_API_URL=${_NEXT_PUBLIC_NOVU_API_URL} \
+          --build-arg NEXT_PUBLIC_NOVU_WEBSOCKET_API_URL=${_NEXT_PUBLIC_NOVU_WEBSOCKET_API_URL} \
+          -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA} \
+          -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest \
+          -f dockerfiles/front.Dockerfile \
+          .
+    timeout: 2400s  # 40 minutes - Next.js builds can be slow
+
+  # Step 3: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-front'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
+    waitFor:
+      - 'build-front'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # More CPU for faster builds
+
+timeout: 3600s  # 1 hour total build timeout
+
+# Trigger configuration (create via gcloud or console)
+# gcloud builds triggers create github \
+#   --name="build-front" \
+#   --repository="projects/${PROJECT_ID}/locations/${_REGION}/connections/github/repositories/dust" \
+#   --branch-pattern="^main$" \
+#   --build-config="gcp-deployment/cloudbuild/cloudbuild-front.yaml" \
+#   --included-files="front/**,sdks/js/**,dockerfiles/front.Dockerfile" \
+#   --substitutions="_NEXT_PUBLIC_DUST_CLIENT_FACING_URL=https://dust.yourdomain.com"

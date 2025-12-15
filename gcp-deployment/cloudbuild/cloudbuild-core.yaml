@@ -1,0 +1,76 @@
+# Cloud Build configuration for Core service (Rust)
+# Builds: core-api, oauth, sqlite-worker
+
+substitutions:
+  _REGION: europe-west1
+  _REPOSITORY: dust-images
+  _SERVICE_NAME: core
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-core'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+      - '-f'
+      - 'dockerfiles/core.Dockerfile'
+      - '.'
+    timeout: 1800s  # 30 minutes - Rust builds can be slow
+
+  # Step 2: Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-core'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
+    waitFor:
+      - 'build-core'
+
+  # Step 3: Build OAuth image (same Dockerfile, different service)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-oauth'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:latest'
+      - '-f'
+      - 'dockerfiles/oauth.Dockerfile'
+      - '.'
+    timeout: 1800s
+
+  # Step 4: Push OAuth image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-oauth'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth'
+    waitFor:
+      - 'build-oauth'
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # Faster builds for Rust
+
+timeout: 3600s  # 1 hour total build timeout
+
+# Trigger configuration (create via gcloud or console)
+# gcloud builds triggers create github \
+#   --name="build-core" \
+#   --repository="projects/${PROJECT_ID}/locations/${_REGION}/connections/github/repositories/dust" \
+#   --branch-pattern="^main$" \
+#   --build-config="gcp-deployment/cloudbuild/cloudbuild-core.yaml" \
+#   --included-files="core/**,dockerfiles/core.Dockerfile,dockerfiles/oauth.Dockerfile"

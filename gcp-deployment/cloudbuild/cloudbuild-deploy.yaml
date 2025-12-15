@@ -1,0 +1,180 @@
+# Cloud Build configuration for deploying to GKE
+# This pipeline deploys all services after images are built
+
+substitutions:
+  _REGION: europe-west1
+  _CLUSTER_NAME: dust-cluster
+  _REPOSITORY: dust-images
+  _NAMESPACE: dust-app
+  _IMAGE_TAG: latest  # Can be overridden with specific commit SHA
+
+steps:
+  # Step 1: Get GKE credentials
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'get-credentials'
+    args:
+      - 'container'
+      - 'clusters'
+      - 'get-credentials'
+      - '${_CLUSTER_NAME}'
+      - '--region'
+      - '${_REGION}'
+      - '--project'
+      - '${PROJECT_ID}'
+
+  # Step 2: Deploy Core service
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-core'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/core'
+      - 'core=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/core:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'get-credentials'
+
+  # Step 3: Deploy OAuth service
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-oauth'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/oauth'
+      - 'oauth=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'get-credentials'
+
+  # Step 4: Deploy Connectors Web
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-connectors-web'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/connectors-web'
+      - 'connectors-web=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/connectors:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'get-credentials'
+
+  # Step 5: Deploy Connectors Worker
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-connectors-worker'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/connectors-worker'
+      - 'connectors-worker=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/connectors:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'get-credentials'
+
+  # Step 6: Deploy Front
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-front'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/front'
+      - 'front=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/front:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'deploy-core'
+      - 'deploy-oauth'
+      - 'deploy-connectors-web'
+
+  # Step 7: Deploy Front Workers
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-front-workers'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/front-workers'
+      - 'front-workers=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/front:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'deploy-front'
+
+  # Step 8: Deploy Viz
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'deploy-viz'
+    args:
+      - 'set'
+      - 'image'
+      - 'deployment/viz'
+      - 'viz=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/viz:${_IMAGE_TAG}'
+      - '-n'
+      - '${_NAMESPACE}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'get-credentials'
+
+  # Step 9: Wait for rollouts to complete
+  - name: 'gcr.io/cloud-builders/kubectl'
+    id: 'verify-rollout'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Waiting for rollouts to complete..."
+        kubectl rollout status deployment/core -n ${_NAMESPACE} --timeout=300s
+        kubectl rollout status deployment/oauth -n ${_NAMESPACE} --timeout=300s
+        kubectl rollout status deployment/connectors-web -n ${_NAMESPACE} --timeout=300s
+        kubectl rollout status deployment/connectors-worker -n ${_NAMESPACE} --timeout=300s
+        kubectl rollout status deployment/front -n ${_NAMESPACE} --timeout=300s
+        kubectl rollout status deployment/front-workers -n ${_NAMESPACE} --timeout=300s
+        kubectl rollout status deployment/viz -n ${_NAMESPACE} --timeout=300s
+        echo "All deployments rolled out successfully!"
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER_NAME}'
+    waitFor:
+      - 'deploy-core'
+      - 'deploy-oauth'
+      - 'deploy-connectors-web'
+      - 'deploy-connectors-worker'
+      - 'deploy-front'
+      - 'deploy-front-workers'
+      - 'deploy-viz'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s  # 30 minutes
+
+# Manual trigger - don't auto-trigger on push
+# gcloud builds triggers create manual \
+#   --name="deploy-to-gke" \
+#   --build-config="gcp-deployment/cloudbuild/cloudbuild-deploy.yaml" \
+#   --substitutions="_IMAGE_TAG=latest"
+#
+# To deploy a specific version:
+# gcloud builds submit --config=gcp-deployment/cloudbuild/cloudbuild-deploy.yaml \
+#   --substitutions="_IMAGE_TAG=abc1234"
