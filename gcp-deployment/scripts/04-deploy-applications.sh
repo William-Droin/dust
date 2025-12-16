@@ -11,7 +11,7 @@ set -euo pipefail
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-PROJECT_ID="${PROJECT_ID:-dust-production}"
+
 REGION="${REGION:-europe-west1}"
 GKE_CLUSTER_NAME="dust-cluster"
 NAMESPACE="dust-app"

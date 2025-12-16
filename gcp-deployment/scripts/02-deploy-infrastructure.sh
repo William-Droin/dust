@@ -11,21 +11,21 @@ set -euo pipefail
 # =============================================================================
 # CONFIGURATION - EDIT THESE VALUES
 # =============================================================================
-PROJECT_ID="${PROJECT_ID:-dust-production}"
+
 REGION="${REGION:-europe-west1}"
 ZONE="${ZONE:-europe-west1-b}"
 
 # GKE Configuration
 GKE_CLUSTER_NAME="dust-cluster"
 GKE_VERSION="1.29"  # Check available versions: gcloud container get-server-config --region=REGION
-GKE_MACHINE_TYPE="e2-standard-4"  # 4 vCPUs, 16GB RAM
+GKE_MACHINE_TYPE="e2-standard-2"  # 2 vCPUs, 8GB RAM
 GKE_MIN_NODES="1"
-GKE_MAX_NODES="5"
+GKE_MAX_NODES="1"
 
 # Cloud SQL Configuration
 CLOUDSQL_INSTANCE_NAME="dust-postgres"
-CLOUDSQL_TIER="db-custom-2-8192"  # 2 vCPUs, 8GB RAM
-CLOUDSQL_STORAGE_SIZE="50"  # GB
+CLOUDSQL_TIER="db-f1-micro"
+CLOUDSQL_STORAGE_SIZE="3"  # GB
 CLOUDSQL_VERSION="POSTGRES_14"
 
 # Memorystore Configuration

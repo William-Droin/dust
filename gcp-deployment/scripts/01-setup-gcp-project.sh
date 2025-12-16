@@ -11,7 +11,7 @@ set -euo pipefail
 # =============================================================================
 # CONFIGURATION - EDIT THESE VALUES
 # =============================================================================
-PROJECT_ID="${PROJECT_ID:-dust-production}"
+
 REGION="${REGION:-europe-west1}"
 ZONE="${ZONE:-europe-west1-b}"
 BILLING_ACCOUNT_ID="${BILLING_ACCOUNT_ID:-}"  # Optional: your billing account ID
