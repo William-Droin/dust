@@ -13,7 +13,7 @@ set -euo pipefail
 # =============================================================================
 
 REGION="${REGION:-europe-west1}"
-ZONE="${ZONE:-europe-west1-b}"
+ZONE="${ZONE:-europe-west4-a}"
 BILLING_ACCOUNT_ID="${BILLING_ACCOUNT_ID:-}"  # Optional: your billing account ID
 
 # Service Account names
