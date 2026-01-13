@@ -311,7 +311,10 @@ fn main() {
             .layer(from_fn(validate_api_key))
             .with_state(state.clone());
 
-        let health_check_router = Router::new().route("/", get(index));
+        let health_check_router = Router::new()
+            .route("/", get(index))
+            .route("/healthz", get(index))
+            .route("/readyz", get(index));
 
         let app = Router::new()
             .merge(router)
