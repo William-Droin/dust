@@ -42,23 +42,36 @@ export async function getConnectionOptions(
 ): Promise<
   | {
       address: string;
-      tls: ConnectionOptions["tls"];
+      tls?: ConnectionOptions["tls"];
     }
   | Record<string, never>
 > {
   const { NODE_ENV = "development" } = process.env;
+  const { TEMPORAL_ADDRESS } = process.env;
+
+  // If TEMPORAL_ADDRESS is set (self-hosted Temporal in cluster), use it directly
+  // This is the common case for GCP/K8s deployments
+  if (TEMPORAL_ADDRESS) {
+    return {
+      address: TEMPORAL_ADDRESS,
+    };
+  }
+
   const isDeployed = ["production", "staging"].includes(NODE_ENV);
 
+  // If not deployed (dev environment), return empty to use localhost
   if (!isDeployed) {
     return {};
   }
 
+  // If deployed but no TEMPORAL_ADDRESS, require mTLS certs (Temporal Cloud fallback)
   const { TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH } = process.env;
   const TEMPORAL_NAMESPACE = process.env[envVarForTemporalNamespace];
   if (!TEMPORAL_CERT_PATH || !TEMPORAL_CERT_KEY_PATH || !TEMPORAL_NAMESPACE) {
     throw new Error(
       `TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH and ${envVarForTemporalNamespace} are required ` +
-        `when NODE_ENV=${NODE_ENV}, but not found in the environment`
+        `when NODE_ENV=${NODE_ENV}, but not found in the environment. ` +
+        `Set TEMPORAL_ADDRESS for self-hosted Temporal or configure mTLS certificates.`
     );
   }
 
