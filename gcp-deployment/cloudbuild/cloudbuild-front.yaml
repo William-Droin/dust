@@ -2,7 +2,7 @@
 # Builds: front web app and front-workers
 
 substitutions:
-  _REGION: europe-west1
+  _REGION: europe-west4
   _REPOSITORY: dust-images
   _SERVICE_NAME: front
   # Build-time args (public env vars for Next.js)
@@ -51,7 +51,6 @@ steps:
           --build-arg NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER=${_NEXT_PUBLIC_NOVU_APPLICATION_IDENTIFIER} \
           --build-arg NEXT_PUBLIC_NOVU_API_URL=${_NEXT_PUBLIC_NOVU_API_URL} \
           --build-arg NEXT_PUBLIC_NOVU_WEBSOCKET_API_URL=${_NEXT_PUBLIC_NOVU_WEBSOCKET_API_URL} \
-          -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA} \
           -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest \
           -f dockerfiles/front.Dockerfile \
           .
@@ -68,7 +67,7 @@ steps:
       - 'build-front'
 
 images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
 
 options:

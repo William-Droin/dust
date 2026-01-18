@@ -2,6 +2,8 @@ import { Context } from "@temporalio/activity";
 import type { ConnectionOptions } from "@temporalio/client";
 import { Client, Connection, WorkflowNotFoundError } from "@temporalio/client";
 import { NativeConnection } from "@temporalio/worker";
+import dns from "node:dns/promises";
+import os from "node:os";
 import fs from "fs-extra";
 
 import logger from "@connectors/logger/logger";
@@ -18,18 +20,117 @@ let TEMPORAL_CLIENT: Client | undefined;
 
 const CONNECTOR_ID_CACHE: Record<string, ModelId> = {};
 
+/**
+ * Small helper to safely stringify errors.
+ */
+function serializeError(err: any) {
+  return {
+    name: err?.name,
+    message: err?.message,
+    stack: err?.stack,
+    code: err?.code,
+    errno: err?.errno,
+    syscall: err?.syscall,
+    address: err?.address,
+    port: err?.port,
+    cause: err?.cause,
+    // Some errors hide useful bits in non-enumerable properties
+    raw: err,
+  };
+}
+
+/**
+ * Debug helper to log the effective address and resolution details.
+ * Keeps logs compact but high-signal.
+ */
+async function logTemporalConnectionDebug(address: string, where: string) {
+  const host = address.split(":")[0] || "";
+
+  try {
+    const lookups = await dns.lookup(host, { all: true });
+    logger.info(
+      {
+        where,
+        address,
+        host,
+        lookups,
+        node: process.version,
+        platform: `${process.platform}/${process.arch}`,
+      },
+      "Temporal connection debug"
+    );
+  } catch (e) {
+    logger.warn(
+      { where, address, host, dnsError: serializeError(e) },
+      "Temporal DNS lookup failed"
+    );
+  }
+
+  // Proxy vars are frequent silent troublemakers in container environments
+  logger.info(
+    {
+      where,
+      HTTP_PROXY: process.env.HTTP_PROXY,
+      HTTPS_PROXY: process.env.HTTPS_PROXY,
+      ALL_PROXY: process.env.ALL_PROXY,
+      NO_PROXY: process.env.NO_PROXY,
+    },
+    "Temporal proxy env"
+  );
+
+  // Network interfaces can be useful when diagnosing EADDRNOTAVAIL / bind issues
+  try {
+    logger.info(
+      { where, ifaces: os.networkInterfaces() },
+      "Temporal network interfaces"
+    );
+  } catch {
+    // ignore
+  }
+}
+
 export async function getTemporalClient(): Promise<Client> {
   if (TEMPORAL_CLIENT) {
     return TEMPORAL_CLIENT;
   }
-  const connectionOptions = await getConnectionOptions();
-  const connection = await Connection.connect(connectionOptions);
-  const client = new Client({
-    connection,
-    namespace: process.env.TEMPORAL_NAMESPACE,
-  });
-  TEMPORAL_CLIENT = client;
 
+  const connectionOptions = await getConnectionOptions();
+
+  const address =
+    (connectionOptions as any)?.address ?? process.env.TEMPORAL_ADDRESS ?? "";
+
+  if (address) {
+    await logTemporalConnectionDebug(address, "client");
+  } else {
+    logger.warn(
+      {
+        NODE_ENV: process.env.NODE_ENV,
+        TEMPORAL_ADDRESS: process.env.TEMPORAL_ADDRESS,
+      },
+      "No Temporal address found in connection options or env"
+    );
+  }
+
+  let connection;
+  try {
+    connection = await Connection.connect(connectionOptions);
+  } catch (err) {
+    logger.error(
+      { err: serializeError(err), connectionOptions },
+      "Failed to connect Temporal Client"
+    );
+    throw err;
+  }
+
+  const clientOptions: { connection: typeof connection; namespace?: string } = {
+    connection,
+  };
+  if (process.env.TEMPORAL_NAMESPACE) {
+    clientOptions.namespace = process.env.TEMPORAL_NAMESPACE;
+  }
+  const client = new Client(clientOptions);
+
+  TEMPORAL_CLIENT = client;
   return client;
 }
 
@@ -43,31 +144,82 @@ async function getConnectionOptions(): Promise<
   const { NODE_ENV = "development" } = process.env;
   const isDeployed = ["production", "staging"].includes(NODE_ENV);
 
+  // In non-deployed environments we return {}, which makes the SDK default
+  // to localhost:7233. This is intentionally preserved from your original file.
   if (!isDeployed) {
     return {};
   }
 
-  const { TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH, TEMPORAL_NAMESPACE } =
-    process.env;
-  if (!TEMPORAL_CERT_PATH || !TEMPORAL_CERT_KEY_PATH || !TEMPORAL_NAMESPACE) {
+  const {
+    TEMPORAL_CERT_PATH,
+    TEMPORAL_CERT_KEY_PATH,
+    TEMPORAL_NAMESPACE,
+    TEMPORAL_ADDRESS,
+  } = process.env;
+
+  // If you provide TEMPORAL_ADDRESS in deployed envs, we can use it directly.
+  // Otherwise we fall back to Temporal Cloud address based on namespace.
+  const address =
+    TEMPORAL_ADDRESS && TEMPORAL_ADDRESS.trim().length > 0
+      ? TEMPORAL_ADDRESS.trim()
+      : TEMPORAL_NAMESPACE
+      ? `${TEMPORAL_NAMESPACE}.tmprl.cloud:7233`
+      : undefined;
+
+  // If no TLS is configured, we still allow connecting (useful for self-hosted).
+  // But we keep the original strictness for Temporal Cloud, where TLS is required.
+  const usingTemporalCloud =
+    !!TEMPORAL_NAMESPACE &&
+    !TEMPORAL_ADDRESS &&
+    address?.endsWith(".tmprl.cloud:7233");
+
+  if (!address) {
     throw new Error(
-      "TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH and TEMPORAL_NAMESPACE are required " +
-        `when NODE_ENV=${NODE_ENV}, but not found in the environment`
+      `No Temporal address could be determined. Provide TEMPORAL_ADDRESS, or TEMPORAL_NAMESPACE. ` +
+        `Current env: NODE_ENV=${NODE_ENV}, TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS}, TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}`
     );
   }
 
-  const cert = await fs.readFile(TEMPORAL_CERT_PATH);
-  const key = await fs.readFile(TEMPORAL_CERT_KEY_PATH);
+  if (usingTemporalCloud) {
+    if (!TEMPORAL_CERT_PATH || !TEMPORAL_CERT_KEY_PATH || !TEMPORAL_NAMESPACE) {
+      throw new Error(
+        "TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH and TEMPORAL_NAMESPACE are required " +
+          `when connecting to Temporal Cloud (NODE_ENV=${NODE_ENV}), but not found in the environment`
+      );
+    }
 
-  return {
-    address: `${TEMPORAL_NAMESPACE}.tmprl.cloud:7233`,
-    tls: {
-      clientCertPair: {
-        crt: cert,
-        key,
+    const cert = await fs.readFile(TEMPORAL_CERT_PATH);
+    const key = await fs.readFile(TEMPORAL_CERT_KEY_PATH);
+
+    return {
+      address,
+      tls: {
+        clientCertPair: {
+          crt: cert,
+          key,
+        },
       },
-    },
-  };
+    };
+  }
+
+  // Self-hosted / non-cloud deployed mode:
+  // - if TLS vars exist, we use them
+  // - otherwise connect plaintext
+  if (TEMPORAL_CERT_PATH && TEMPORAL_CERT_KEY_PATH) {
+    const cert = await fs.readFile(TEMPORAL_CERT_PATH);
+    const key = await fs.readFile(TEMPORAL_CERT_KEY_PATH);
+    return {
+      address,
+      tls: {
+        clientCertPair: {
+          crt: cert,
+          key,
+        },
+      },
+    };
+  }
+
+  return { address, tls: undefined };
 }
 
 export async function getTemporalWorkerConnection(): Promise<{
@@ -75,8 +227,32 @@ export async function getTemporalWorkerConnection(): Promise<{
   namespace: string | undefined;
 }> {
   const connectionOptions = await getConnectionOptions();
-  const connection = await NativeConnection.connect(connectionOptions);
-  return { connection, namespace: process.env.TEMPORAL_NAMESPACE };
+
+  const address =
+    (connectionOptions as any)?.address ?? process.env.TEMPORAL_ADDRESS ?? "";
+
+  if (address) {
+    await logTemporalConnectionDebug(address, "worker");
+  } else {
+    logger.warn(
+      {
+        NODE_ENV: process.env.NODE_ENV,
+        TEMPORAL_ADDRESS: process.env.TEMPORAL_ADDRESS,
+      },
+      "No Temporal address found in connection options or env (worker)"
+    );
+  }
+
+  try {
+    const connection = await NativeConnection.connect(connectionOptions);
+    return { connection, namespace: process.env.TEMPORAL_NAMESPACE };
+  } catch (err) {
+    logger.error(
+      { err: serializeError(err), connectionOptions },
+      "Failed to connect Temporal Worker"
+    );
+    throw err;
+  }
 }
 
 export async function getConnectorId(
@@ -128,9 +304,7 @@ export async function terminateWorkflow(workflowId: string, reason?: string) {
   return false;
 }
 
-export async function terminateAllWorkflowsForConnectorId(
-  connectorId: ModelId
-) {
+export async function terminateAllWorkflowsForConnectorId(connectorId: ModelId) {
   const client = await getTemporalClient();
 
   const workflowInfos = client.workflow.list({

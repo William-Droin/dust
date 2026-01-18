@@ -2,7 +2,7 @@
 # Builds: core-api, oauth, sqlite-worker
 
 substitutions:
-  _REGION: europe-west1
+  _REGION: europe-west4
   _REPOSITORY: dust-images
   _SERVICE_NAME: core
 
@@ -12,8 +12,8 @@ steps:
     id: 'build-core'
     args:
       - 'build'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      # - '-t'
+      # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
       - '-f'
@@ -36,8 +36,8 @@ steps:
     id: 'build-oauth'
     args:
       - 'build'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${SHORT_SHA}'
+      # - '-t'
+      # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${SHORT_SHA}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:latest'
       - '-f'
@@ -56,9 +56,9 @@ steps:
       - 'build-oauth'
 
 images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${SHORT_SHA}'
+  # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/oauth:latest'
 
 options:

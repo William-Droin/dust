@@ -1,13 +1,13 @@
 # Unified Webhook Router
 
-A secure Firebase Function that routes webhooks from Slack and Microsoft Teams to multiple regional endpoints with platform-specific verification.
+A secure Firebase Function that routes webhooks from Slack, Microsoft Teams, and Notion to regional endpoints with platform-specific verification.
 
 ## Features
 
-- ✅ **Multi-platform support** - Handles Slack and Microsoft Teams webhooks
+- ✅ **Multi-platform support** - Handles Slack, Microsoft Teams, and Notion webhooks
 - ✅ **Platform-specific verification** - Slack HMAC signatures + Teams JWT validation
 - ✅ **Webhook secret validation** - Double security layer for both platforms
-- ✅ **Multi-region forwarding** - Routes to US and EU endpoints
+- ✅ **Single-region forwarding** - Routes to EU endpoint only
 - ✅ **URL verification** - Handles Slack's URL verification challenges
 - ✅ **Form-data preservation** - Maintains original webhook formats
 - ✅ **Serverless scaling** - Auto-scales from 0 to N instances
@@ -18,27 +18,92 @@ A secure Firebase Function that routes webhooks from Slack and Microsoft Teams t
 
 ### Prerequisites
 
-1. **Install Firebase CLI** (if not already installed):
+1. Add Firebase to GCP
+
+2. **Install Firebase CLI** (if not already installed):
 
    ```bash
    npm install -g firebase-tools
    ```
 
-2. **Login to Firebase**:
+3. **Login to Firebase**:
 
    ```bash
    firebase login
    ```
 
-3. **Environment Variables**:
+4. **GCP Project Setup**:
+   Your Firebase project must exist and have the required resources:
+
+   ```bash
+   # Set your GCP project ID
+   export GCP_PROJECT_ID="your-gcp-project-id"
+   
+   # Enable required APIs
+   gcloud services enable cloudfunctions.googleapis.com
+   gcloud services enable secretmanager.googleapis.com
+   gcloud services enable firestore.googleapis.com
+   
+   # Select the Firebase project
+   firebase use $GCP_PROJECT_ID
+   ```
+
+5. **Create Required Secrets**:
+   Create secrets in GCP Secret Manager (one-time setup):
+
+   ```bash
+   # Webhook secret - used for both webhook auth and forwarding
+   gcloud secrets create connectors-DUST_CONNECTORS_WEBHOOKS_SECRET --replication-policy="automatic"
+   echo -n "your-webhook-secret" | gcloud secrets versions add connectors-DUST_CONNECTORS_WEBHOOKS_SECRET --data-file=-
+   
+   # Platform-specific secrets
+   gcloud secrets create SLACK_SIGNING_SECRET --replication-policy="automatic"
+   gcloud secrets create MICROSOFT_BOT_ID_SECRET --replication-policy="automatic"
+   gcloud secrets create NOTION_SIGNING_SECRET --replication-policy="automatic"
+   
+   # Add secret values (replace placeholders with actual values)
+   echo -n "your-slack-signing-secret" | gcloud secrets versions add SLACK_SIGNING_SECRET --data-file=-
+   echo -n "your-microsoft-bot-id" | gcloud secrets versions add MICROSOFT_BOT_ID_SECRET --data-file=-
+   echo -n "your-notion-signing-secret" | gcloud secrets versions add NOTION_SIGNING_SECRET --data-file=-
+   ```
+
+6. **Configure IAM Permissions**:
+   The webhook-router service account needs access to secrets:
+
+   ```bash
+   # Get the service account email (created by Firebase automatically)
+   SERVICE_ACCOUNT=$(gcloud functions describe webhookRouter --format="value(serviceConfig.serviceAccountEmail)")
+   
+   # Grant secret manager accessor role
+   gcloud projects get-iam-policy $GCP_PROJECT_ID \
+     --flatten="bindings[].members" \
+     --filter="bindings.role:roles/secretmanager.secretAccessor" \
+     --format="value(bindings.members)" | while read member; do
+       gcloud secrets add-iam-policy-binding connectors-DUST_CONNECTORS_WEBHOOKS_SECRET \
+         --member="$member" \
+         --role="roles/secretmanager.secretAccessor"
+       gcloud secrets add-iam-policy-binding SLACK_SIGNING_SECRET \
+         --member="$member" \
+         --role="roles/secretmanager.secretAccessor"
+       gcloud secrets add-iam-policy-binding MICROSOFT_BOT_ID_SECRET \
+         --member="$member" \
+         --role="roles/secretmanager.secretAccessor"
+       gcloud secrets add-iam-policy-binding NOTION_SIGNING_SECRET \
+         --member="$member" \
+         --role="roles/secretmanager.secretAccessor"
+     done
+   ```
+
+7. **Environment Variables**:
    Set the required GCP project IDs for deployment:
-   - `GCP_GLOBAL_PROJECT_ID`
-   - `GCP_US_PROJECT_ID`
-   - `GCP_EU_PROJECT_ID`
+   ```bash
+   export GCP_GLOBAL_PROJECT_ID="your-gcp-project-id"
+   export GCP_EU_PROJECT_ID="your-gcp-project-id"
+   ```
 
 ### Project Configuration
 
-The project is configured to deploy to `dust-infra` (see `.firebaserc`).
+The project is configured to deploy to `dust-infra` (see `.firebaserc`). Update the project ID in `.firebaserc` if different.
 
 ## Deployment
 
@@ -95,7 +160,7 @@ https://webhook-router.dust.tt/YOUR_WEBHOOK_SECRET/notion
 ## Architecture
 
 ```
-Slack/Teams → Firebase Hosting → Firebase Function → [US Endpoint, EU Endpoint]
+Slack/Teams → Firebase Hosting → Firebase Function → [EU Endpoint]
 ```
 
 **Security Flow:**
@@ -160,3 +225,47 @@ npm run build   # Build TypeScript
 npm run lint    # Run linter
 npm run dev     # Start Firebase emulator
 ```
+
+## Complete Deployment Checklist
+
+Use this checklist for a fresh deployment:
+
+### Step 1: GCP Prerequisites
+- [ ] Create GCP project or use existing one
+- [ ] Enable billing on the project
+- [ ] Install and configure gcloud CLI
+- [ ] Run `firebase login` and `firebase use <project-id>`
+
+### Step 2: Enable APIs
+```bash
+gcloud services enable cloudfunctions.googleapis.com
+gcloud services enable secretmanager.googleapis.com
+gcloud services enable firestore.googleapis.com
+```
+
+### Step 3: Create Secrets
+- [ ] `connectors-DUST_CONNECTORS_WEBHOOKS_SECRET` - Main webhook secret
+- [ ] `SLACK_SIGNING_SECRET` - From Slack app settings
+- [ ] `MICROSOFT_BOT_ID_SECRET` - From Azure portal
+- [ ] `NOTION_SIGNING_SECRET` - From Notion integration settings
+
+### Step 4: Configure Platform Webhooks
+Configure the webhook URLs in each platform's developer console:
+
+- **Slack**: `https://us-central1-<project>.cloudfunctions.net/webhookRouter/<secret>/slack/events`
+- **Microsoft Teams**: `https://us-central1-<project>.cloudfunctions.net/webhookRouter/<secret>/microsoft/teams/messages`
+- **Notion**: `https://us-central1-<project>.cloudfunctions.net/webhookRouter/<secret>/notion`
+
+### Step 5: Deploy
+```bash
+export GCP_GLOBAL_PROJECT_ID="your-project-id"
+export GCP_EU_PROJECT_ID="your-project-id"
+cd firebase-functions/webhook-router
+./deploy.sh
+```
+
+### Step 6: Verify
+- [ ] Function deployed successfully (check Firebase Console)
+- [ ] Test webhook endpoints with platform tools
+- [ ] Check Cloud Logs for incoming requests
+- [ ] Verify webhooks are reaching your EU connector endpoint

@@ -5,7 +5,6 @@ import { CONFIG, getProjectIds } from "./config.js";
 export interface Secrets {
   euSecret: string;
   slackSigningSecret: string;
-  usSecret: string;
   webhookSecret: string;
   microsoftBotId?: string;
   notionSigningSecret: string;
@@ -46,7 +45,6 @@ export class SecretManager {
         microsoftBotId: CONFIG.MICROSOFT_BOT_ID_SECRET,
         slackSigningSecret: CONFIG.SLACK_SIGNING_SECRET ?? "",
         notionSigningSecret: CONFIG.NOTION_SIGNING_SECRET ?? "",
-        usSecret: CONFIG.DUST_CONNECTORS_WEBHOOKS_SECRET,
         webhookSecret: CONFIG.DUST_CONNECTORS_WEBHOOKS_SECRET,
       };
     }
@@ -60,17 +58,15 @@ export class SecretManager {
   }
 
   private async loadFromSecretManager(): Promise<Secrets> {
-    const { GCP_GLOBAL_PROJECT_ID, GCP_US_PROJECT_ID, GCP_EU_PROJECT_ID } =
-      getProjectIds();
+    const { GCP_GLOBAL_PROJECT_ID, GCP_EU_PROJECT_ID } = getProjectIds();
 
-    if (!GCP_GLOBAL_PROJECT_ID || !GCP_US_PROJECT_ID || !GCP_EU_PROJECT_ID) {
+    if (!GCP_GLOBAL_PROJECT_ID || !GCP_EU_PROJECT_ID) {
       throw new Error("Missing required project environment variables");
     }
 
     try {
       const [
         webhookSecretResponse,
-        usSecretResponse,
         euSecretResponse,
         slackSigningSecretResponse,
         microsoftBotIdResponse,
@@ -78,9 +74,6 @@ export class SecretManager {
       ] = await Promise.all([
         this.client.accessSecretVersion({
           name: `projects/${GCP_GLOBAL_PROJECT_ID}/secrets/${CONFIG.SECRET_NAME}/versions/latest`,
-        }),
-        this.client.accessSecretVersion({
-          name: `projects/${GCP_US_PROJECT_ID}/secrets/${CONFIG.SECRET_NAME}/versions/latest`,
         }),
         this.client.accessSecretVersion({
           name: `projects/${GCP_EU_PROJECT_ID}/secrets/${CONFIG.SECRET_NAME}/versions/latest`,
@@ -100,7 +93,6 @@ export class SecretManager {
         webhookSecret: webhookSecretResponse[0].payload?.data?.toString() || "",
         microsoftBotId:
           microsoftBotIdResponse[0].payload?.data?.toString() || "",
-        usSecret: usSecretResponse[0].payload?.data?.toString() || "",
         euSecret: euSecretResponse[0].payload?.data?.toString() || "",
         slackSigningSecret:
           slackSigningSecretResponse[0].payload?.data?.toString() || "",

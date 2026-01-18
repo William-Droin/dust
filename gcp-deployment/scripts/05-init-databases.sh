@@ -12,7 +12,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west4}"
 GKE_CLUSTER_NAME="dust-cluster"
 NAMESPACE="dust-app"
 

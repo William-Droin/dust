@@ -2,7 +2,7 @@
 # Builds: visualization UI
 
 substitutions:
-  _REGION: europe-west1
+  _REGION: europe-west4
   _REPOSITORY: dust-images
   _SERVICE_NAME: viz
 
@@ -14,8 +14,8 @@ steps:
       - 'build'
       - '--build-arg'
       - 'COMMIT_HASH=${SHORT_SHA}'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+      # - '-t'
+      # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
       - '-f'
@@ -34,7 +34,7 @@ steps:
       - 'build-viz'
 
 images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
+  # - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
 
 options:

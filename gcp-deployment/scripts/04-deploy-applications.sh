@@ -12,7 +12,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west4}"
 GKE_CLUSTER_NAME="dust-cluster"
 NAMESPACE="dust-app"
 REPOSITORY="dust-images"
@@ -55,25 +55,21 @@ if [[ "${BUILD_IMAGES}" =~ ^[Yy]$ ]]; then
     # Get the repository root
     REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo ".")
     
-    log_info "Building Core..."
-    gcloud builds submit "${REPO_ROOT}" \
-        --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-core.yaml" \
-        --async
+    # log_info "Building Core..."
+    # gcloud builds submit "${REPO_ROOT}" \
+    #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-core.yaml" \
     
-    log_info "Building Front..."
-    gcloud builds submit "${REPO_ROOT}" \
-        --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-front.yaml" \
-        --async
+    # log_info "Building Front..."
+    # gcloud builds submit "${REPO_ROOT}" \
+    #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-front.yaml" \
     
     log_info "Building Connectors..."
     gcloud builds submit "${REPO_ROOT}" \
         --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-connectors.yaml" \
-        --async
     
-    log_info "Building Viz..."
-    gcloud builds submit "${REPO_ROOT}" \
-        --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-viz.yaml" \
-        --async
+    # log_info "Building Viz..." 
+    # gcloud builds submit "${REPO_ROOT}" \
+    #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-viz.yaml" \
     
     log_info "Builds submitted. Check Cloud Build console for progress."
     log_info "Re-run this script after builds complete."

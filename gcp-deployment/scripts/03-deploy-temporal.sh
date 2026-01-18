@@ -12,7 +12,7 @@ set -euo pipefail
 # CONFIGURATION
 # =============================================================================
 
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west4}"
 GKE_CLUSTER_NAME="dust-cluster"
 NAMESPACE="temporal"
 
@@ -115,7 +115,7 @@ server:
       default:
         driver: "sql"
         sql:
-          driver: "postgres"
+          driver: "postgres12"
           host: "${TEMPORAL_DB_HOST}"
           port: ${TEMPORAL_DB_PORT}
           database: "temporal"
@@ -128,7 +128,7 @@ server:
       visibility:
         driver: "sql"
         sql:
-          driver: "postgres"
+          driver: "postgres12"
           host: "${TEMPORAL_DB_HOST}"
           port: ${TEMPORAL_DB_PORT}
           database: "temporal_visibility"

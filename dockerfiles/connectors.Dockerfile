@@ -14,6 +14,7 @@ RUN ./install_poppler_tools.sh
 FROM node:20.19.2 as connectors
 
 ENV LD_LIBRARY_PATH=/usr/local/lib
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 COPY --from=build /tmp/poppler-23.07.0/build/utils/pdftotext /usr/bin/pdftotext
 COPY --from=build /tmp/poppler-23.07.0/build/libpoppler.so.130 /usr/lib/libpoppler.so.130
 

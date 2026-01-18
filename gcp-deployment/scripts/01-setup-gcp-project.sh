@@ -12,7 +12,7 @@ set -euo pipefail
 # CONFIGURATION - EDIT THESE VALUES
 # =============================================================================
 
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west4}"
 ZONE="${ZONE:-europe-west4-a}"
 BILLING_ACCOUNT_ID="${BILLING_ACCOUNT_ID:-}"  # Optional: your billing account ID
 

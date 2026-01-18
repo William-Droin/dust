@@ -165,7 +165,7 @@ After this script completes, save the output values:
 1. Go to [Elastic Cloud](https://cloud.elastic.co)
 2. Create a new deployment:
    - Cloud Provider: GCP
-   - Region: Same as your GKE cluster (europe-west1)
+   - Region: Same as your GKE cluster (europe-west4)
    - Plan: 2GB RAM minimum recommended
 3. Save the following:
    - Elasticsearch endpoint URL
@@ -528,3 +528,78 @@ Estimated monthly cost: **$600-900** for ~40 users
 - Check `docs/SECRETS.md` for environment variable reference
 - Review `docs/TROUBLESHOOTING.md` for common issues
 - Refer to the Dust project documentation
+
+---
+
+## Step 10: Deploy Firebase Webhook Router
+
+The Firebase webhook router receives webhooks from Slack, Microsoft Teams, and Notion and forwards them to your connectors service.
+
+### Prerequisites
+
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Enable required APIs
+gcloud services enable cloudfunctions.googleapis.com
+gcloud services enable secretmanager.googleapis.com
+```
+
+### Create Secrets
+
+```bash
+# Create webhook secret (self-generated)
+export WEBHOOK_SECRET="$(openssl rand -hex 32)"
+
+gcloud secrets create connectors-DUST_CONNECTORS_WEBHOOKS_SECRET --replication-policy="automatic"
+echo -n "$WEBHOOK_SECRET" | gcloud secrets versions add connectors-DUST_CONNECTORS_WEBHOOKS_SECRET --data-file=-
+
+# Platform-specific secrets (get from respective platforms)
+gcloud secrets create SLACK_SIGNING_SECRET --replication-policy="automatic"
+gcloud secrets create MICROSOFT_BOT_ID_SECRET --replication-policy="automatic"
+gcloud secrets create NOTION_SIGNING_SECRET --replication-policy="automatic"
+
+# Add values to each secret (replace placeholders with actual values)
+echo -n "your-slack-signing-secret" | gcloud secrets versions add SLACK_SIGNING_SECRET --data-file=-
+echo -n "your-microsoft-bot-id" | gcloud secrets versions add MICROSOFT_BOT_ID_SECRET --data-file=-
+echo -n "your-notion-signing-secret" | gcloud secrets versions add NOTION_SIGNING_SECRET --data-file=-
+```
+
+### Deploy
+
+```bash
+cd firebase-functions/webhook-router
+
+# Build and deploy (EU region)
+export GCP_GLOBAL_PROJECT_ID="your-project-id"
+export GCP_EU_PROJECT_ID="your-project-id"
+
+./deploy.sh
+```
+
+### Function URL
+
+After deployment, your webhook endpoint will be available at:
+```
+https://europe-west4-your-project.cloudfunctions.net/webhookRouter/YOUR_WEBHOOK_SECRET/{platform}/{endpoint}
+```
+
+### Configure Platform Webhooks
+
+Configure the webhook URLs in each platform's developer console:
+- **Slack**: `https://europe-west4-your-project.cloudfunctions.net/webhookRouter/<WEBHOOK_SECRET>/slack/events`
+- **Teams**: `https://europe-west4-your-project.cloudfunctions.net/webhookRouter/<WEBHOOK_SECRET>/microsoft/teams/messages`
+- **Notion**: `https://europe-west4-your-project.cloudfunctions.net/webhookRouter/<WEBHOOK_SECRET>/notion`
+
+### Cost
+
+Firebase Functions free tier includes:
+- 2M invocations/month
+- 400K GB-seconds/month
+- 200K CPU-seconds/month
+
+For typical webhook traffic, this is usually free ($0-5/month).

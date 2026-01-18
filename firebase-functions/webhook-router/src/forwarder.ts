@@ -19,11 +19,6 @@ export class WebhookForwarder {
   }): Promise<PromiseSettledResult<Response>[]> {
     const targets = [
       {
-        region: "US",
-        url: CONFIG.US_CONNECTOR_URL,
-        secret: this.secrets.usSecret,
-      },
-      {
         region: "EU",
         url: CONFIG.EU_CONNECTOR_URL,
         secret: this.secrets.euSecret,

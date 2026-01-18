@@ -8,8 +8,8 @@ const serviceAccount = defineString("SERVICE_ACCOUNT");
 
 // Set global options for all functions.
 setGlobalOptions({
-  region: "us-central1",
-  maxInstances: 10,
+  region: "europe-west4",
+  maxInstances: 2,
   memory: "512MiB",
   timeoutSeconds: 300,
 });
@@ -20,7 +20,7 @@ export const webhookRouter = onRequest(
     // Function-specific options.
     cors: false, // We'll handle CORS in Express if needed.
     invoker: "public",
-    minInstances: 1,
+    minInstances: 0,
     serviceAccount,
   },
   async (req, res) => {

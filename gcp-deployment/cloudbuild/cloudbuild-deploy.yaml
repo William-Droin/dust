@@ -2,7 +2,7 @@
 # This pipeline deploys all services after images are built
 
 substitutions:
-  _REGION: europe-west1
+  _REGION: europe-west4
   _CLUSTER_NAME: dust-cluster
   _REPOSITORY: dust-images
   _NAMESPACE: dust-app
