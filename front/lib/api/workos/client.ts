@@ -6,9 +6,10 @@ let workos: WorkOS | null = null;
 
 export function getWorkOS() {
   if (!workos) {
+    const apiHostname = config.getWorkOSApiHostname();
     workos = new WorkOS(config.getWorkOSApiKey(), {
       clientId: config.getWorkOSClientId(),
-      apiHostname: "auth-api.dust.tt",
+      apiHostname,
     });
   }
 

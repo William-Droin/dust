@@ -177,6 +177,7 @@ DUST_RELOCATION_BUCKET=dust-prod-relocation
 |----------|---------|----------|-------------|
 | `WORKOS_API_KEY` | front | ✅ | WorkOS API Key |
 | `WORKOS_CLIENT_ID` | front | ✅ | WorkOS Client ID |
+| `WORKOS_API_HOSTNAME` | front | ✅ | WorkOS API hostname (e.g., `auth-api.dust.tt`) |
 | `WORKOS_COOKIE_PASSWORD` | front | ✅ | 32-char secret for cookie encryption |
 | `WORKOS_ISSUER_URL` | front | ✅ | WorkOS issuer URL |
 | `WORKOS_WEBHOOK_SECRET` | front | ✅ | Webhook verification secret |
@@ -447,6 +448,7 @@ ELASTICSEARCH_PASSWORD=
 TEXT_EXTRACTION_URL=
 WORKOS_API_KEY=
 WORKOS_CLIENT_ID=
+WORKOS_API_HOSTNAME=
 WORKOS_COOKIE_PASSWORD=
 WORKOS_ISSUER_URL=
 WORKOS_SESSION_COOKIE_DOMAIN=

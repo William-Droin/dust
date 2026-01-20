@@ -298,6 +298,9 @@ const config = {
   getWorkOSEnvironmentId: (): string => {
     return EnvironmentConfig.getEnvVariable("WORKOS_ENVIRONMENT_ID");
   },
+  getWorkOSApiHostname: (): string => {
+    return EnvironmentConfig.getEnvVariable("WORKOS_API_HOSTNAME");
+  },
   // Profiler.
   getProfilerSecret: (): string | undefined => {
     return EnvironmentConfig.getOptionalEnvVariable("DEBUG_PROFILER_SECRET");
