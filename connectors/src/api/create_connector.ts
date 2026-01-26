@@ -192,7 +192,8 @@ const _createConnectorAPIHandler = async (
       }
 
       default:
-        assertNever(req.params.connector_provider);
+        // @ts-expect-error - dust_project deprecated
+      assertNever(req.params.connector_provider);
     }
 
     if (connectorRes.isErr()) {

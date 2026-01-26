@@ -1250,7 +1250,7 @@ async function makeContentFragments(
         fileSize: f.size!,
         useCase: "conversation",
         useCaseMetadata: conversationId ? { conversationId } : undefined,
-        fileObject: new File([fileContent], fileName, {
+        fileObject: new File([new Uint8Array(fileContent)], fileName, {
           type: f.mimetype,
         }),
       });

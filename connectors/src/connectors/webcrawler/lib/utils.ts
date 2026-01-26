@@ -49,7 +49,7 @@ export function stableIdForUrl({
       : ressourceType === "table"
         ? "database"
         : "folder";
-  return Buffer.from(blake3(`${typePrefix}-${url}`)).toString("hex");
+  return Buffer.from(blake3(`${typePrefix}-${url}`) as any).toString("hex");
 }
 
 export function getParentsForPage(url: string, pageInItsOwnFolder: boolean) {

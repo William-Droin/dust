@@ -258,7 +258,7 @@ export async function syncOneFile({
     ];
 
     result = await handleCsvFile({
-      data,
+      data: data.buffer as ArrayBuffer,
       tableId: documentId,
       fileName: file.name || "",
       localLogger,
@@ -315,7 +315,7 @@ export async function syncOneFile({
       result = handleTextFile(downloadRes.data, maxDocumentLen);
     } else {
       const data = Buffer.from(downloadRes.data);
-      result = await handleTextExtraction(data, localLogger, mimeType);
+      result = await handleTextExtraction(data.buffer as ArrayBuffer, localLogger, mimeType);
     }
 
     const updatedAt = file.lastModifiedDateTime

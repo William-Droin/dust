@@ -50,10 +50,10 @@ makeScript(
       }
     }
 
-    // @ts-expect-error -- Dropped column
     const webcrawlerConfigs = await WebCrawlerConfigurationModel.findAll({
       where: {
-        // @ts-expect-error -- Dropped column
+        // @ts-expect-error - Dropped column
+
         customCrawler: {
           [Op.is]: null,
         },
@@ -93,9 +93,9 @@ makeScript(
         webcrawlerConfigsToMigrate,
         async (crawler) =>
           WebCrawlerConfigurationModel.update(
-            // @ts-expect-error -- Dropped column
+            // @ts-expect-error - Dropped column
+
             { customCrawler: "firecrawl" },
-            // @ts-expect-error -- Dropped column
             { where: { id: crawler.id } }
           ),
         { concurrency: 10 }

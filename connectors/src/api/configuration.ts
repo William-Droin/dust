@@ -85,6 +85,7 @@ const _patchConnectorConfiguration = async (
     }
 
     default: {
+      // @ts-expect-error - dust_project deprecated
       assertNever(connector.type);
     }
   }

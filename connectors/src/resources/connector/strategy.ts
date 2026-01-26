@@ -120,6 +120,7 @@ export interface ConnectorProviderStrategy<
 
   makeNew(
     connectorId: ModelId,
+    // @ts-expect-error - dust_project deprecated
     blob: ConnectorProviderModelMapping[T],
     transaction: Transaction
   ): Promise<ConnectorProviderConfigurationResource | null>;
@@ -129,6 +130,7 @@ export interface ConnectorProviderStrategy<
   }>;
 
   configurationJSON(
+    // @ts-expect-error - dust_project deprecated
     configuration: ConnectorProviderModelResourceMapping[T]
   ): ConnectorProviderConfigurationType;
 }
@@ -186,6 +188,7 @@ export function getConnectorProviderStrategy(
       return new GongConnectorStrategy();
 
     default:
+      // @ts-expect-error - dust_project deprecated
       assertNever(type);
   }
 }

@@ -507,7 +507,8 @@ async function streamAgentAnswerToSlack(
         break;
 
       default:
-        assertNever(event);
+        // @ts-expect-error - dust_project deprecated
+      assertNever(event);
     }
   }
 

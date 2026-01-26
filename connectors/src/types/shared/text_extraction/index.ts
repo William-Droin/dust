@@ -221,7 +221,7 @@ export class TextExtraction {
               "Content-Type": contentType,
               ...additionalHeaders,
             },
-            body: fileBuffer,
+            body: new Uint8Array(fileBuffer),
           }),
         {
           retries: 3,

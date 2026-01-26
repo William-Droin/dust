@@ -234,7 +234,7 @@ export class GCSRepositoryManager {
           chunks.push(chunk);
         }
 
-        const content = Buffer.concat(chunks);
+        const content = Buffer.concat(chunks.map(c => new Uint8Array(c as Buffer)));
         await this.uploadFile(gcsPath, content, { contentType, metadata });
       } else {
         // Large file - stream directly to GCS.

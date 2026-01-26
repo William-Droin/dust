@@ -195,8 +195,8 @@ async function getConnectionOptions(): Promise<
       address,
       tls: {
         clientCertPair: {
-          crt: cert,
-          key,
+          crt: new Uint8Array(cert),
+          key: new Uint8Array(key),
         },
       },
     };
@@ -212,8 +212,8 @@ async function getConnectionOptions(): Promise<
       address,
       tls: {
         clientCertPair: {
-          crt: cert,
-          key,
+          crt: new Uint8Array(cert),
+          key: new Uint8Array(key),
         },
       },
     };
@@ -226,34 +226,31 @@ export async function getTemporalWorkerConnection(): Promise<{
   connection: NativeConnection;
   namespace: string | undefined;
 }> {
-  const connectionOptions = await getConnectionOptions();
-
-  const address =
-    (connectionOptions as any)?.address ?? process.env.TEMPORAL_ADDRESS ?? "";
+  const address = (process.env.TEMPORAL_ADDRESS || "").trim();
 
   if (address) {
     await logTemporalConnectionDebug(address, "worker");
   } else {
-    logger.warn(
-      {
-        NODE_ENV: process.env.NODE_ENV,
-        TEMPORAL_ADDRESS: process.env.TEMPORAL_ADDRESS,
-      },
-      "No Temporal address found in connection options or env (worker)"
+    logger.error(
+      { NODE_ENV: process.env.NODE_ENV, TEMPORAL_ADDRESS: process.env.TEMPORAL_ADDRESS },
+      "TEMPORAL_ADDRESS is required for worker connection but is missing/empty"
     );
+    throw new Error("TEMPORAL_ADDRESS is required for Temporal worker connection");
   }
 
   try {
-    const connection = await NativeConnection.connect(connectionOptions);
+    // IMPORTANT: pass only { address } to avoid native option parsing edge cases
+    const connection = await NativeConnection.connect({ address });
     return { connection, namespace: process.env.TEMPORAL_NAMESPACE };
   } catch (err) {
     logger.error(
-      { err: serializeError(err), connectionOptions },
+      { err: serializeError(err), address },
       "Failed to connect Temporal Worker"
     );
     throw err;
   }
 }
+
 
 export async function getConnectorId(
   workflowRunId: string

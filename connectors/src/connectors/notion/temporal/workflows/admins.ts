@@ -247,18 +247,18 @@ export async function updateOrphanedResourcesParentsWorkflow({
   } | null = null;
 
   do {
-    const { pageIds, databaseIds, nextCursor } = await getAllOrphanedResources({
+    const { pageIds, databaseIds, nextCursor }: { pageIds: any; databaseIds: any; nextCursor: any } = await getAllOrphanedResources({
       connectorId,
       cursor,
     });
 
     const allResources: Array<{ notionId: string; type: "page" | "database" }> =
       [
-        ...pageIds.map((p) => ({
+        ...pageIds.map((p: any) => ({
           notionId: p,
           type: "page" as const,
         })),
-        ...databaseIds.map((d) => ({ notionId: d, type: "database" as const })),
+        ...databaseIds.map((d: any) => ({ notionId: d, type: "database" as const })),
       ];
 
     const chunks = chunk(allResources, BATCH_SIZE);

@@ -173,7 +173,7 @@ export async function syncOneChannel(
   let weeksSynced: Record<number, boolean> = {};
 
   do {
-    const syncChannelRes = await getSlackActivities().syncChannel(
+    const syncChannelRes: any = await getSlackActivities().syncChannel(
       channelId,
       connectorId,
       fromTs,

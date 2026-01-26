@@ -421,14 +421,14 @@ export const batch = async ({
         }
       };
 
-      queue.on("completed", () => {
-        succeeded++;
-        logInfo();
-      });
-      queue.on("error", () => {
-        failed++;
-        logInfo();
-      });
+      // queue.on("completed", () => {
+      //   succeeded++;
+      //   logInfo();
+      // });
+      // queue.on("error", () => {
+      //   failed++;
+      //   logInfo();
+      // });
 
       await Promise.all(promises);
 

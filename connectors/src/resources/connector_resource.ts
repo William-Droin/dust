@@ -110,6 +110,7 @@ export class ConnectorResource extends BaseResource<ConnectorModel> {
 
     const configurations: Record<
       ModelId,
+      // @ts-expect-error - dust_project deprecated
       ConnectorProviderModelResourceMapping[typeof type]
     > = await getConnectorProviderStrategy(
       type
@@ -195,6 +196,7 @@ export class ConnectorResource extends BaseResource<ConnectorModel> {
 
     const configurations: Record<
       ModelId,
+      // @ts-expect-error - dust_project deprecated
       ConnectorProviderModelResourceMapping[typeof type]
     > = await getConnectorProviderStrategy(
       type

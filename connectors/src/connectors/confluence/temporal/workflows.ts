@@ -210,7 +210,7 @@ export async function confluenceSpaceSyncWorkflow(
   for (const allowedRootContentId of allowedRootContentIds) {
     let nextPageCursor: string | null = "";
     do {
-      const { topLevelContentRefs, nextPageCursor: nextCursor } =
+      const { topLevelContentRefs, nextPageCursor: nextCursor }: { topLevelContentRefs: any; nextPageCursor: any } =
         await confluenceGetTopLevelContentIdsActivity({
           confluenceCloudId,
           connectorId,
@@ -221,7 +221,7 @@ export async function confluenceSpaceSyncWorkflow(
 
       nextPageCursor = nextCursor; // Prepare for the next iteration.
 
-      topLevelContentRefs.forEach((c) =>
+      topLevelContentRefs.forEach((c: any) =>
         uniqueTopLevelContentRefs.set(c.id, c)
       );
     } while (nextPageCursor !== null);

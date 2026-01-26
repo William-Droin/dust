@@ -162,7 +162,7 @@ const _authMiddlewareWebhooksGithub = (
   const signatureHeader = req.headers["x-hub-signature-256"];
   const computedSignature = `sha256=${crypto
     .createHmac("sha256", GITHUB_WEBHOOK_SECRET)
-    .update(body)
+    .update(new Uint8Array(body))
     .digest("hex")}`;
 
   if (Array.isArray(signatureHeader)) {
@@ -181,8 +181,8 @@ const _authMiddlewareWebhooksGithub = (
 
   if (
     !crypto.timingSafeEqual(
-      Buffer.from(signatureHeader),
-      Buffer.from(computedSignature)
+      new Uint8Array(Buffer.from(signatureHeader)),
+      new Uint8Array(Buffer.from(computedSignature))
     )
   ) {
     logger.error(
@@ -255,7 +255,7 @@ const _authMiddlewareWebhooksIntercom = (
     const signatureHeader = req.headers["x-hub-signature"];
     const computedSignature = `sha1=${crypto
       .createHmac("sha1", INTERCOM_CLIENT_SECRET)
-      .update(body)
+      .update(new Uint8Array(body))
       .digest("hex")}`;
 
     if (Array.isArray(signatureHeader)) {
@@ -274,8 +274,8 @@ const _authMiddlewareWebhooksIntercom = (
 
     if (
       !crypto.timingSafeEqual(
-        Buffer.from(signatureHeader),
-        Buffer.from(computedSignature)
+        new Uint8Array(Buffer.from(signatureHeader)),
+        new Uint8Array(Buffer.from(computedSignature))
       )
     ) {
       logger.error(
