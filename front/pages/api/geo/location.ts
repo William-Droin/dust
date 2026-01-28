@@ -40,6 +40,16 @@ export default async function handler(
     }
 
     const token = config.getIPInfoApiToken();
+
+    // If no token is configured, default to GDPR=true (conservative approach)
+    if (!token) {
+      logger.warn("IPINFO_API_TOKEN not configured, defaulting to GDPR=true");
+      return res.status(200).json({
+        isGDPR: true,
+        countryCode: "FR",
+      });
+    }
+
     const response = await fetch(
       `https://api.ipinfo.io/lite/${ip}?token=${token}`
     );
