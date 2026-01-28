@@ -9,7 +9,7 @@ let dustApiInstance: DustAPI | null = null;
 export const getApiDomain = (region: string | null): Result<string, Error> => {
   const url = (() => {
     switch (region) {
-      case "europe-west1":
+      case "europe-west4":
         return process.env.DUST_EU_URL || process.env.DEFAULT_DUST_API_DOMAIN;
       case "us-central1":
         return process.env.DUST_US_URL || process.env.DEFAULT_DUST_API_DOMAIN;

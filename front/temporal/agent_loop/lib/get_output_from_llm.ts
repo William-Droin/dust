@@ -118,7 +118,7 @@ export async function getOutputFromLLMStream(
         const currentRegion = regionsConfig.getCurrentRegion();
         let region: "us" | "eu";
         switch (currentRegion) {
-          case "europe-west1":
+          case "europe-west4":
             region = "eu";
             break;
           case "us-central1":

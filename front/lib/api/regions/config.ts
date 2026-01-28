@@ -1,6 +1,6 @@
 import { EnvironmentConfig, isDevelopment } from "@app/types";
 
-export const SUPPORTED_REGIONS = ["europe-west1", "us-central1"] as const;
+export const SUPPORTED_REGIONS = ["europe-west4", "us-central1"] as const;
 export type RegionType = (typeof SUPPORTED_REGIONS)[number];
 
 export interface RegionInfo {
@@ -24,14 +24,14 @@ export const config = {
       return "http://localhost:3000";
     }
 
-    return region === "europe-west1"
+    return region === "europe-west4"
       ? EnvironmentConfig.getEnvVariable("DUST_EU_URL")
       : EnvironmentConfig.getEnvVariable("DUST_US_URL");
   },
   getOtherRegionInfo(): RegionInfo {
     const currentRegion = this.getCurrentRegion();
     const otherRegion =
-      currentRegion === "europe-west1" ? "us-central1" : "europe-west1";
+      currentRegion === "europe-west4" ? "us-central1" : "europe-west4";
 
     return {
       name: otherRegion,
