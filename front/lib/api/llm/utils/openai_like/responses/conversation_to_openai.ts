@@ -46,7 +46,7 @@ function toInputContent(content: Content): ResponseInputContent {
 
 const REGION_MAPPING: { [key in RegionType]: "us" | "eu" } = {
   "us-central1": "us",
-  "europe-west1": "eu",
+  "europe-west4": "eu"
 };
 
 function toAssistantInputItem(

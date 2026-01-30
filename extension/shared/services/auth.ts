@@ -203,7 +203,7 @@ export function isValidEnterpriseConnection(
   );
 }
 
-const REGIONS = ["europe-west1", "us-central1"] as const;
+const REGIONS = ["europe-west4", "us-central1"] as const;
 type RegionType = (typeof REGIONS)[number];
 
 const isRegionType = (region: string): region is RegionType =>
@@ -211,5 +211,5 @@ const isRegionType = (region: string): region is RegionType =>
 
 const DOMAIN_FOR_REGION: Record<RegionType, string> = {
   "us-central1": DUST_US_URL,
-  "europe-west1": DUST_EU_URL,
+  "europe-west4": DUST_EU_URL,
 };

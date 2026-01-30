@@ -229,13 +229,13 @@ else
         --network=dust-vpc
 fi
 
-# Create private connection
-log_info "Creating private connection to Google services..."
-gcloud services vpc-peerings connect \
-    --service=servicenetworking.googleapis.com \
-    --ranges=dust-private-services \
-    --network=dust-vpc \
-    --project="${PROJECT_ID}" || log_warn "Private connection may already exist"
+# Create private connection Already ran by vincent
+# log_info "Creating private connection to Google services..."
+# gcloud services vpc-peerings connect \
+#     --service=servicenetworking.googleapis.com \
+#     --ranges=dust-private-services \
+#     --network=dust-vpc \
+#     --project="${PROJECT_ID}" || log_warn "Private connection may already exist"
 
 # =============================================================================
 # CREATE CLOUD NAT

@@ -21,7 +21,7 @@ export const bigqueryChangeLocationPlugin = createPlugin({
         multiple: false,
         label: "New Location",
         description:
-          "Select the exact location where the datasets reside (e.g., EU, US, europe-west1).",
+          "Select the exact location where the datasets reside (e.g., EU, US, europe-west4).",
         values: [],
       },
       confirm: {

@@ -139,7 +139,7 @@ export const slackWhitelistBotPlugin = createPlugin({
       );
     }
 
-    const isEU = regionsConfig.getCurrentRegion() === "europe-west1";
+    const isEU = regionsConfig.getCurrentRegion() === "europe-west4";
     const metabaseUrl = isEU
       ? `https://eu.metabase.dust.tt/question/46-whitelisted-bots-given-connector?connectorId=${resource.connectorId}`
       : `https://metabase.dust.tt/question/637-whitelisted-bots-given-connector?connectorId=${resource.connectorId}`;

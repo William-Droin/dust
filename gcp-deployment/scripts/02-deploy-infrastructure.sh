@@ -13,7 +13,7 @@ set -euo pipefail
 # =============================================================================
 
 REGION="${REGION:-europe-west4}"
-ZONE="${ZONE:-europe-west1-b}"
+ZONE="${ZONE:-europe-west4-b}"
 
 # GKE Configuration
 GKE_CLUSTER_NAME="dust-cluster"
@@ -25,7 +25,7 @@ GKE_MAX_NODES="1"
 # Cloud SQL Configuration
 CLOUDSQL_INSTANCE_NAME="dust-postgres"
 CLOUDSQL_TIER="db-f1-micro"
-CLOUDSQL_STORAGE_SIZE="3"  # GB
+CLOUDSQL_STORAGE_SIZE="10"  # GB
 CLOUDSQL_VERSION="POSTGRES_14"
 
 # Memorystore Configuration
@@ -106,7 +106,7 @@ else
         --cluster="${GKE_CLUSTER_NAME}" \
         --region="${REGION}" \
         --num-nodes=1 \
-        --machine-type="e2-standard-4" \
+        --machine-type="e2-standard-2" \
         --enable-autoscaling \
         --min-nodes=1 \
         --max-nodes=3 \
@@ -221,7 +221,7 @@ gcloud iam service-accounts add-iam-policy-binding \
 
 kubectl annotate serviceaccount dust-app-sa \
     -n dust-app \
-    iam.gke.io/gcp-service-account="${SA_WORKLOAD_IDENTITY}@${PROJECT_ID}.iam.gserviceaccount.com" \
+    iam.gke.io/gcp-service-account="899703110100-compute@developer.gserviceaccount.com" \
     --overwrite
 
 # =============================================================================

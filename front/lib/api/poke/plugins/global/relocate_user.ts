@@ -28,7 +28,7 @@ export const relocateUserPlugin = createPlugin({
           label:
             region === "us-central1"
               ? "US (us-central1)"
-              : "Europe (europe-west1)",
+              : "Europe (europe-west4)",
         })),
         multiple: false,
       },

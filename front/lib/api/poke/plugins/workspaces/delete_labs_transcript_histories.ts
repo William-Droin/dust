@@ -127,7 +127,7 @@ export const deleteLabsTranscriptHistoriesPlugin = createPlugin({
     // Determine the correct Temporal namespace based on region
     const currentRegion = config.getCurrentRegion();
     const temporalNamespace =
-      currentRegion === "europe-west1"
+      currentRegion === "europe-west4"
         ? "eu-dust-front-prod.gmnlm"
         : "dust-front-prod.gmnlm";
     const temporalLink = `https://cloud.temporal.io/namespaces/${temporalNamespace}/workflows?query=%60WorkflowId%60+STARTS_WITH+%22labs-transcripts-retrieve-${workspace.id}-${configuration.id}%22`;

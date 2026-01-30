@@ -108,7 +108,7 @@ cat > /tmp/temporal-values.yaml << EOF
 # Self-hosted on GKE with Cloud SQL PostgreSQL backend
 
 server:
-  replicaCount: 2
+  replicaCount: 1
   
   config:
     persistence:
@@ -139,7 +139,7 @@ server:
           maxConnLifetime: "1h"
 
   frontend:
-    replicaCount: 2
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -149,7 +149,7 @@ server:
         memory: 512Mi
   
   history:
-    replicaCount: 2
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m
@@ -159,7 +159,7 @@ server:
         memory: 512Mi
   
   matching:
-    replicaCount: 2
+    replicaCount: 1
     resources:
       requests:
         cpu: 100m

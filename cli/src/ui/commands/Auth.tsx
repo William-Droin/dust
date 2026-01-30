@@ -159,7 +159,7 @@ const Auth: FC<AuthProps> = ({ force = false, apiKey, wId }) => {
               // Use the specific claim namespace from Workos
               const region = decodedToken[regionClaimName];
               if (region) {
-                // Save the exact region value (e.g., 'us-central1', 'europe-west1')
+                // Save the exact region value (e.g., 'us-central1', 'europe-west4')
                 await TokenStorage.saveRegion(region);
               } else {
                 // Default to a standard value if region is not found in token

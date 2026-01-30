@@ -10,7 +10,7 @@ on:
         type: choice
         options:
           - "us-central1"
-          - "europe-west1"
+          - "europe-west4"
       image_tag:
         description: "The image tag/SHA to deploy"
         type: string

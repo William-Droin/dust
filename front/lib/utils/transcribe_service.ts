@@ -15,7 +15,7 @@ import { normalizeError } from "@app/types/shared/utils/error_utils";
 async function getElevenLabs() {
   const credentials = dustManagedCredentials();
   const elevenLabsEnvironment =
-    regionsConfig.getCurrentRegion() === "europe-west1"
+    regionsConfig.getCurrentRegion() === "europe-west4"
       ? ElevenLabsEnvironment.ProductionEu
       : ElevenLabsEnvironment.ProductionUs;
   return new ElevenLabsClient({

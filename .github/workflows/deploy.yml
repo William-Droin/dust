@@ -11,7 +11,7 @@ on:
         type: choice
         options:
           - "us-central1"
-          - "europe-west1"
+          - "europe-west4"
           - "all"
       component:
         description: "Name of the component to deploy"
@@ -113,7 +113,7 @@ jobs:
       - id: set-matrix
         run: |
           if [ "${{ inputs.regions }}" = "all" ]; then
-            echo "matrix=[\"us-central1\",\"europe-west1\"]" >> $GITHUB_OUTPUT
+            echo "matrix=[\"us-central1\",\"europe-west4\"]" >> $GITHUB_OUTPUT
           else
             echo "matrix=[\"${{ inputs.regions }}\"]" >> $GITHUB_OUTPUT
           fi

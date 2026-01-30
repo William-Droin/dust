@@ -208,7 +208,7 @@ export function resolveDefaultVoiceId({
 export function getElevenLabsClient() {
   const credentials = dustManagedCredentials();
   const environment =
-    regionsConfig.getCurrentRegion() === "europe-west1"
+    regionsConfig.getCurrentRegion() === "europe-west4"
       ? ElevenLabsEnvironment.ProductionEu
       : ElevenLabsEnvironment.ProductionUs;
 

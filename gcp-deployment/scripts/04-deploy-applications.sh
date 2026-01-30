@@ -11,7 +11,7 @@ set -euo pipefail
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-
+PROJECT_ID="ghs-cloud-ia"
 REGION="${REGION:-europe-west4}"
 GKE_CLUSTER_NAME="dust-cluster"
 NAMESPACE="dust-app"
@@ -58,18 +58,22 @@ if [[ "${BUILD_IMAGES}" =~ ^[Yy]$ ]]; then
     # log_info "Building Core..."
     # gcloud builds submit "${REPO_ROOT}" \
     #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-core.yaml" \
+    #     --async
     
-    # log_info "Building Front..."
-    # gcloud builds submit "${REPO_ROOT}" \
-    #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-front.yaml" \
-    
-    log_info "Building Connectors..."
+    log_info "Building Front..."
     gcloud builds submit "${REPO_ROOT}" \
-        --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-connectors.yaml" \
+        --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-front.yaml" \
+        --async
     
-    # log_info "Building Viz..." 
+    # log_info "Building Connectors..."
+    # gcloud builds submit "${REPO_ROOT}" \
+    #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-connectors.yaml" \
+    #     --async
+    
+    # log_info "Building Viz..."
     # gcloud builds submit "${REPO_ROOT}" \
     #     --config="${REPO_ROOT}/gcp-deployment/cloudbuild/cloudbuild-viz.yaml" \
+    #     --async
     
     log_info "Builds submitted. Check Cloud Build console for progress."
     log_info "Re-run this script after builds complete."
@@ -643,11 +647,114 @@ spec:
 EOF
 
 # =============================================================================
+# DEPLOY ELASTICSEARCH (Self-hosted, single-node)
+# =============================================================================
+log_info "Deploying Elasticsearch..."
+
+kubectl apply -f - <<'EOF'
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: elastic
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: elastic
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: elastic
+spec:
+  serviceName: elasticsearch
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      terminationGracePeriodSeconds: 120
+      containers:
+        - name: elasticsearch
+          image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+          ports:
+            - containerPort: 9200
+              name: http
+            - containerPort: 9300
+              name: transport
+          env:
+            # Single node mode for dev/POC
+            - name: discovery.type
+              value: single-node
+
+            # IMPORTANT: This disables Elasticsearch security (no auth, no TLS).
+            # Good for quick internal cluster usage only.
+            - name: xpack.security.enabled
+              value: "false"
+
+            # Keep memory sane on small nodes
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
+
+            # Helps avoid bootstrap checks in small environments
+            - name: bootstrap.memory_lock
+              value: "false"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 2Gi
+            limits:
+              cpu: "1"
+              memory: 3Gi
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9200
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 2
+  volumeClaimTemplates:
+    - metadata:
+        name: es-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: premium-rwo
+        resources:
+          requests:
+            storage: 30Gi
+EOF
+
+# =============================================================================
 # WAIT FOR DEPLOYMENTS
 # =============================================================================
 log_info "Waiting for deployments to be ready..."
 
-for deploy in core oauth connectors-web connectors-worker front front-workers viz; do
+for deploy in elastic; do
     kubectl rollout status deployment/${deploy} -n ${NAMESPACE} --timeout=300s || \
         log_warn "Deployment ${deploy} not ready yet"
 done

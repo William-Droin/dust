@@ -11,8 +11,8 @@ set -euo pipefail
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
-
-REGION="${REGION:-europe-west4}"
+PROJECT_ID="ghs-cloud-ia"
+REGION="europe-west4"
 GKE_CLUSTER_NAME="dust-cluster"
 NAMESPACE="dust-app"
 

@@ -33,8 +33,8 @@ describe("GET /api/poke/region", () => {
     });
   });
 
-  it("returns correct region data when in europe-west1", async () => {
-    vi.mocked(config.getCurrentRegion).mockReturnValue("europe-west1");
+  it("returns correct region data when in europe-west4", async () => {
+    vi.mocked(config.getCurrentRegion).mockReturnValue("europe-west4");
     const { req, res } = await createPrivateApiMockRequest({
       isSuperUser: true,
     });
@@ -43,7 +43,7 @@ describe("GET /api/poke/region", () => {
 
     expect(res._getStatusCode()).toBe(200);
     expect(res._getJSONData()).toEqual({
-      region: "europe-west1",
+      region: "europe-west4",
       regionUrls: expect.any(Object),
     });
   });
