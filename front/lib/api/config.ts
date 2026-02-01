@@ -293,7 +293,7 @@ const config = {
   getWorkOSSessionCookieDomain: (): string | undefined => {
     return isDevelopment()
       ? undefined
-      : EnvironmentConfig.getEnvVariable("WORKOS_SESSION_COOKIE_DOMAIN");
+      : EnvironmentConfig.getOptionalEnvVariable("WORKOS_SESSION_COOKIE_DOMAIN");
   },
   getWorkOSEnvironmentId: (): string => {
     return EnvironmentConfig.getEnvVariable("WORKOS_ENVIRONMENT_ID");

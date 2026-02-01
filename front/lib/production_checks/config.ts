@@ -18,8 +18,10 @@ const config = {
   getFrontDatabasePrimaryUri: (): string => {
     return EnvironmentConfig.getEnvVariable("FRONT_DATABASE_URI");
   },
-  getFrontDatabaseReadReplicaUri: (): string => {
-    return EnvironmentConfig.getEnvVariable("FRONT_DATABASE_READ_REPLICA_URI");
+  getFrontDatabaseReadReplicaUri: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable(
+      "FRONT_DATABASE_READ_REPLICA_URI"
+    );
   },
 };
 
