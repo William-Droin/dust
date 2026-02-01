@@ -68,15 +68,16 @@ let frontReplicaDbInstance: Sequelize | null = null;
 
 export function getFrontReplicaDbConnection() {
   if (!frontReplicaDbInstance) {
-    frontReplicaDbInstance = new Sequelize(
-      dbConfig.getRequiredFrontReplicaDatabaseURI() as string,
-      {
-        logging: false,
-        dialectOptions: {
-          appName: "front replica",
-        },
-      }
-    );
+    const replicaUri = dbConfig.getFrontReplicaDatabaseURI();
+    // Fall back to primary database if replica is not configured
+    const uri =
+      replicaUri ?? dbConfig.getRequiredFrontDatabaseURI();
+    frontReplicaDbInstance = new Sequelize(uri as string, {
+      logging: false,
+      dialectOptions: {
+        appName: replicaUri ? "front replica" : "front replica (fallback to primary)",
+      },
+    });
   }
 
   return frontReplicaDbInstance;

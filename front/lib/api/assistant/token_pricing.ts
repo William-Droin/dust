@@ -236,6 +236,10 @@ const CURRENT_MODEL_PRICING: Record<BaseModelIdType, PricingEntry> = {
     input: 0.2,
     output: 0.5,
   },
+    "openai/gpt-oss-120b": {
+    input: 0.04,
+    output: 0.2,
+  },
   noop: {
     input: 0,
     output: 0,
