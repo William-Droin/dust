@@ -38,8 +38,10 @@ export function getCoreReplicaDbConnection() {
 
 export function getFrontReplicaDbConnection() {
   if (!frontReplicaDbInstance) {
+    const replicaUri = config.getFrontDatabaseReadReplicaUri();
+    const uri = replicaUri ?? config.getFrontDatabasePrimaryUri();
     frontReplicaDbInstance = new Sequelize(
-      config.getFrontDatabaseReadReplicaUri(),
+      uri,
       {
         logging: false,
       }

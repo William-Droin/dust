@@ -256,8 +256,8 @@ const config = {
   getStatusPageDustPageId: (): string => {
     return EnvironmentConfig.getEnvVariable("STATUS_PAGE_DUST_PAGE_ID");
   },
-  getStatusPageApiToken: (): string => {
-    return EnvironmentConfig.getEnvVariable("STATUS_PAGE_API_TOKEN");
+  getStatusPageApiToken: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable("STATUS_PAGE_API_TOKEN");
   },
   getMultiActionsAgentAnthropicBetaFlags: (): string[] | undefined => {
     return EnvironmentConfig.getOptionalEnvVariable(

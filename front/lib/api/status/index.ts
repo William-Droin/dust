@@ -19,8 +19,13 @@ async function getProvidersStatus(): Promise<AppStatusComponent | null> {
     return null;
   }
 
+  const apiToken = config.getStatusPageApiToken();
+  if (!apiToken) {
+    return null;
+  }
+
   const providersIncidents = await getUnresolvedIncidents({
-    apiToken: config.getStatusPageApiToken(),
+    apiToken,
     pageId: config.getStatusPageProvidersPageId(),
   });
 
@@ -43,8 +48,13 @@ async function getDustStatus(): Promise<AppStatusComponent | null> {
     return null;
   }
 
+  const apiToken = config.getStatusPageApiToken();
+  if (!apiToken) {
+    return null;
+  }
+
   const dustIncidents = await getUnresolvedIncidents({
-    apiToken: config.getStatusPageApiToken(),
+    apiToken,
     pageId: config.getStatusPageDustPageId(),
   });
 
