@@ -257,7 +257,7 @@ makeScript(
       }
     );
 
-    const temporalNamespace = process.env.TEMPORAL_NAMESPACE;
+    const temporalNamespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
 
     if (temporalNamespace) {
       const workflowUrl = `https://cloud.temporal.io/namespaces/${temporalNamespace}/workflows/${handle.workflowId}`;

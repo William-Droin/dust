@@ -497,7 +497,7 @@ export const temporal = async ({
       }
       const c = await getTemporalClient();
       const describeTqRes = await c.workflowService.describeTaskQueue({
-        namespace: process.env.TEMPORAL_NAMESPACE || "default",
+        namespace: process.env.TEMPORAL_CONNECTORS_NAMESPACE || "default",
         taskQueue: { name: q },
       });
       logger.info({ describeTqRes }, "[Admin] DescribeTqRes");
@@ -509,7 +509,7 @@ export const temporal = async ({
       const queues = new Set<string>();
 
       const openWfRes = await c.workflowService.listWorkflowExecutions({
-        namespace: process.env.TEMPORAL_NAMESPACE || "default",
+        namespace: process.env.TEMPORAL_CONNECTORS_NAMESPACE || "default",
         pageSize: 5000,
         query: `ExecutionStatus="Running"`,
       });
@@ -525,7 +525,7 @@ export const temporal = async ({
       const queuesAndPollers = [];
       for (const q of queues) {
         const qRes = await c.workflowService.describeTaskQueue({
-          namespace: process.env.TEMPORAL_NAMESPACE || "default",
+          namespace: process.env.TEMPORAL_CONNECTORS_NAMESPACE || "default",
           taskQueue: { name: q },
         });
         logger.info(

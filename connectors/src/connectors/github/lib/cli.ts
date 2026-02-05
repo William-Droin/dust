@@ -90,7 +90,7 @@ export const github = async ({
       );
 
       const workflowId = getRepoSyncWorkflowId(connector.id, repoId);
-      const temporalNamespace = process.env.TEMPORAL_NAMESPACE;
+      const temporalNamespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
       if (temporalNamespace) {
         const workflowUrl = `https://cloud.temporal.io/namespaces/${temporalNamespace}/workflows/${workflowId}`;
         logger.info(`[Admin] Started temporal workflow - ${workflowUrl}`);
@@ -133,7 +133,7 @@ export const github = async ({
       );
 
       const workflowId = getCodeSyncWorkflowId(connector.id, repoId);
-      const temporalNamespace = process.env.TEMPORAL_NAMESPACE;
+      const temporalNamespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
       if (temporalNamespace) {
         const workflowUrl = `https://cloud.temporal.io/namespaces/${temporalNamespace}/workflows/${workflowId}`;
         logger.info(`[Admin] Started temporal workflow - ${workflowUrl}`);

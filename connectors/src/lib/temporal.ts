@@ -125,8 +125,8 @@ export async function getTemporalClient(): Promise<Client> {
   const clientOptions: { connection: typeof connection; namespace?: string } = {
     connection,
   };
-  if (process.env.TEMPORAL_NAMESPACE) {
-    clientOptions.namespace = process.env.TEMPORAL_NAMESPACE;
+  if (process.env.TEMPORAL_CONNECTORS_NAMESPACE) {
+    clientOptions.namespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
   }
   const client = new Client(clientOptions);
 
@@ -153,7 +153,7 @@ async function getConnectionOptions(): Promise<
   const {
     TEMPORAL_CERT_PATH,
     TEMPORAL_CERT_KEY_PATH,
-    TEMPORAL_NAMESPACE,
+    TEMPORAL_CONNECTORS_NAMESPACE,
     TEMPORAL_ADDRESS,
   } = process.env;
 
@@ -162,28 +162,32 @@ async function getConnectionOptions(): Promise<
   const address =
     TEMPORAL_ADDRESS && TEMPORAL_ADDRESS.trim().length > 0
       ? TEMPORAL_ADDRESS.trim()
-      : TEMPORAL_NAMESPACE
-      ? `${TEMPORAL_NAMESPACE}.tmprl.cloud:7233`
+      : TEMPORAL_CONNECTORS_NAMESPACE
+      ? `${TEMPORAL_CONNECTORS_NAMESPACE}.tmprl.cloud:7233`
       : undefined;
 
   // If no TLS is configured, we still allow connecting (useful for self-hosted).
   // But we keep the original strictness for Temporal Cloud, where TLS is required.
   const usingTemporalCloud =
-    !!TEMPORAL_NAMESPACE &&
+    !!TEMPORAL_CONNECTORS_NAMESPACE &&
     !TEMPORAL_ADDRESS &&
     address?.endsWith(".tmprl.cloud:7233");
 
   if (!address) {
     throw new Error(
-      `No Temporal address could be determined. Provide TEMPORAL_ADDRESS, or TEMPORAL_NAMESPACE. ` +
-        `Current env: NODE_ENV=${NODE_ENV}, TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS}, TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE}`
+      `No Temporal address could be determined. Provide TEMPORAL_ADDRESS, or TEMPORAL_CONNECTORS_NAMESPACE. ` +
+        `Current env: NODE_ENV=${NODE_ENV}, TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS}, TEMPORAL_CONNECTORS_NAMESPACE=${TEMPORAL_CONNECTORS_NAMESPACE}`
     );
   }
 
   if (usingTemporalCloud) {
-    if (!TEMPORAL_CERT_PATH || !TEMPORAL_CERT_KEY_PATH || !TEMPORAL_NAMESPACE) {
+    if (
+      !TEMPORAL_CERT_PATH ||
+      !TEMPORAL_CERT_KEY_PATH ||
+      !TEMPORAL_CONNECTORS_NAMESPACE
+    ) {
       throw new Error(
-        "TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH and TEMPORAL_NAMESPACE are required " +
+        "TEMPORAL_CERT_PATH, TEMPORAL_CERT_KEY_PATH and TEMPORAL_CONNECTORS_NAMESPACE are required " +
           `when connecting to Temporal Cloud (NODE_ENV=${NODE_ENV}), but not found in the environment`
       );
     }
@@ -241,7 +245,10 @@ export async function getTemporalWorkerConnection(): Promise<{
   try {
     // IMPORTANT: pass only { address } to avoid native option parsing edge cases
     const connection = await NativeConnection.connect({ address });
-    return { connection, namespace: process.env.TEMPORAL_NAMESPACE };
+    return {
+      connection,
+      namespace: process.env.TEMPORAL_CONNECTORS_NAMESPACE,
+    };
   } catch (err) {
     logger.error(
       { err: serializeError(err), address },

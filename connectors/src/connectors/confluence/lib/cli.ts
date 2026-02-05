@@ -94,7 +94,7 @@ export const confluence = async ({
       );
 
       const { workflowId } = workflow;
-      const temporalNamespace = process.env.TEMPORAL_NAMESPACE;
+      const temporalNamespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
       if (!temporalNamespace) {
         logger.info(`[Admin] Started temporal workflow with id: ${workflowId}`);
       } else {
@@ -175,7 +175,7 @@ export const confluence = async ({
       );
 
       const { workflowId } = workflow;
-      const temporalNamespace = process.env.TEMPORAL_NAMESPACE;
+      const temporalNamespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
       if (!temporalNamespace) {
         logger.info(`[Admin] Started temporal workflow with id: ${workflowId}`);
       } else {
@@ -415,7 +415,7 @@ export const confluence = async ({
       );
 
       const { workflowId } = workflow;
-      const temporalNamespace = process.env.TEMPORAL_NAMESPACE;
+      const temporalNamespace = process.env.TEMPORAL_CONNECTORS_NAMESPACE;
       if (!temporalNamespace) {
         logger.info(`[Admin] Started temporal workflow with id: ${workflowId}`);
       } else {
