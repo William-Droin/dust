@@ -318,15 +318,20 @@ export async function notifyIfSlackUserIsNotAllowed(
   } | null = null;
 
   if (isExternal) {
-    // If the external user is allowed, they are allowed with a specific group id.
-    externalAuthorization = await isExternalUserAllowed(
-      connector,
-      slackClient,
-      slackUserInfo,
-      slackInfos,
-      whitelistedDomains
-    );
-    isAllowed = externalAuthorization.authorized;
+    const isMember = await isUserAllowed(connector, slackUserInfo);
+    if (isMember) {
+      isAllowed = true;
+    } else {
+      // If the external user is allowed, they are allowed with a specific group id.
+      externalAuthorization = await isExternalUserAllowed(
+        connector,
+        slackClient,
+        slackUserInfo,
+        slackInfos,
+        whitelistedDomains
+      );
+      isAllowed = externalAuthorization.authorized;
+    }
   } else {
     // Handle users that are not Slack external.
     isAllowed = await isSlackUserAllowed(

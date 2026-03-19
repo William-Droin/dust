@@ -82,7 +82,6 @@ export function getConnectorManager({
     case "discord_bot":
       return new DiscordBotConnectorManager(connectorId);
     default:
-      // @ts-expect-error - dust_project deprecated
       assertNever(connectorProvider);
   }
 }
@@ -162,7 +161,6 @@ export function createConnector({
     case "discord_bot":
       return DiscordBotConnectorManager.create(params);
     default:
-      // @ts-expect-error - dust_project deprecated
       assertNever(connectorProvider);
   }
 }

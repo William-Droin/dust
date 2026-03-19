@@ -68,9 +68,6 @@ const workerFunctions: Record<WorkerType, () => Promise<void>> = {
   bigquery: runBigQueryWorker,
   salesforce: runSalesforceWorker,
   gong: runGongWorker,
-  dust_project: async () => {
-    throw new Error("dust_project connector type is deprecated");
-  },
 };
 
 const ALL_WORKERS = Object.keys(workerFunctions) as WorkerType[];
