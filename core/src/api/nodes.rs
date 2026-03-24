@@ -6,6 +6,7 @@ use axum::Json;
 use http::StatusCode;
 use serde_json::json;
 use std::sync::Arc;
+use tracing::error;
 
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -37,6 +38,10 @@ pub async fn nodes_search(
             warning_code,
         ),
         Err(e) => {
+            error!(
+                error = %e,
+                "[nodes_search] search_store.search_nodes failed"
+            );
             return error_response(
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "internal_server_error",

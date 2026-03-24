@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use dust::{
     data_sources::qdrant::{QdrantClients, QdrantCluster, SHARD_KEY_COUNT},
+    data_sources::qdrant::qdrant_collection_name,
     providers::{
         embedder::{EmbedderProvidersModelMap, SupportedEmbedderModels},
         provider::{provider, ProviderID},
@@ -34,6 +35,10 @@ struct Args {
     /// Name of the cluster.
     #[arg(short, long)]
     cluster: QdrantCluster,
+
+    /// Skip interactive confirmation prompt.
+    #[arg(long, default_value_t = false)]
+    yes: bool,
 }
 
 async fn create_indexes_for_collection(
@@ -93,6 +98,7 @@ async fn create_qdrant_collection(
     cluster: QdrantCluster,
     provider_id: ProviderID,
     model_id: SupportedEmbedderModels,
+    yes: bool,
 ) -> Result<()> {
     let qdrant_clients = QdrantClients::build().await?;
     let client = qdrant_clients.client(cluster);
@@ -100,11 +106,10 @@ async fn create_qdrant_collection(
 
     let embedder = provider(provider_id).embedder(model_id.to_string());
 
-    let collection_name = format!(
-        "{}_{}_{}",
-        client.collection_prefix(),
-        provider_id,
-        model_id
+    let collection_name = qdrant_collection_name(
+        &client.collection_prefix(),
+        &provider_id.to_string(),
+        &model_id.to_string(),
     );
 
     println!(
@@ -112,12 +117,14 @@ async fn create_qdrant_collection(
         collection_name, cluster
     );
 
-    match utils::confirm(&format!(
-        "Are you sure you want to create collection {} on cluster {}?",
-        collection_name, cluster
-    ))? {
-        true => (),
-        false => Err(anyhow!("Aborted"))?,
+    if !yes {
+        match utils::confirm(&format!(
+            "Are you sure you want to create collection {} on cluster {}?",
+            collection_name, cluster
+        ))? {
+            true => (),
+            false => Err(anyhow!("Aborted"))?,
+        }
     }
 
     // See https://www.notion.so/dust-tt/Design-Doc-Qdrant-re-arch-d0ebdd6ae8244ff593cdf10f08988c27.
@@ -144,7 +151,7 @@ async fn create_qdrant_collection(
                 .on_disk_payload(true)
                 .sharding_method(qdrant::ShardingMethod::Custom.into())
                 .shard_number(2)
-                .replication_factor(2)
+                .replication_factor(1)
                 .write_consistency_factor(1),
         )
         .await?;
@@ -214,7 +221,7 @@ async fn main() -> Result<(), anyhow::Error> {
         std::process::exit(1);
     }
 
-    create_qdrant_collection(args.cluster, args.provider, args.model)
+    create_qdrant_collection(args.cluster, args.provider, args.model, args.yes)
         .await
         .map_err(|e| {
             eprintln!("Error creating collection: {}", e);

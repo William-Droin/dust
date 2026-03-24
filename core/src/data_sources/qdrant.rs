@@ -19,6 +19,18 @@ use serde::{Deserialize, Serialize};
 
 use super::data_source::EmbedderConfig;
 
+/// Qdrant collection names cannot contain `/`.
+///
+/// Dust embedder model ids can contain `/` (ex: OpenRouter-style `publisher/model`).
+/// This helper generates a Qdrant-safe collection name while keeping the naming scheme stable
+/// for existing providers whose model ids don't contain `/`.
+pub fn qdrant_collection_name(prefix: &str, provider_id: &str, model_id: &str) -> String {
+    // Be conservative: right now we only need to escape `/`.
+    // We use a double-underscore to reduce ambiguity with existing ids.
+    let safe_model_id = model_id.replace('/', "__");
+    format!("{}_{}_{}", prefix, provider_id, safe_model_id)
+}
+
 #[derive(Debug, Clone, Copy, Serialize, PartialEq, Deserialize, Eq, Hash)]
 pub enum QdrantCluster {
     #[serde(rename = "cluster-0")]
@@ -138,11 +150,10 @@ impl DustQdrantClient {
         // To allow migrations between embedders in the future we will
         // add a notion of shadow_write embedding provider/model on the data source config
         // that will have to be used here.
-        format!(
-            "{}_{}_{}",
-            self.collection_prefix(),
-            embedder_config.provider_id.to_string(),
-            embedder_config.model_id,
+        qdrant_collection_name(
+            &self.collection_prefix(),
+            &embedder_config.provider_id.to_string(),
+            &embedder_config.model_id,
         )
     }
 

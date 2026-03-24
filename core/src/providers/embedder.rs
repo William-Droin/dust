@@ -178,6 +178,8 @@ pub enum SupportedEmbedderModels {
     TextEmbedding3Large1536,
     #[clap(name = "mistral-embed")]
     MistralEmbed,
+    #[clap(name = "qwen/qwen3-embedding-4b")]
+    QwenQwen3Embedding4B,
 }
 
 impl fmt::Display for SupportedEmbedderModels {
@@ -188,6 +190,9 @@ impl fmt::Display for SupportedEmbedderModels {
             }
             SupportedEmbedderModels::MistralEmbed => {
                 write!(f, "mistral-embed")
+            }
+            SupportedEmbedderModels::QwenQwen3Embedding4B => {
+                write!(f, "qwen/qwen3-embedding-4b")
             }
         }
     }
@@ -201,6 +206,7 @@ impl EmbedderProvidersModelMap {
         match provider {
             &ProviderID::OpenAI => Ok(vec![SupportedEmbedderModels::TextEmbedding3Large1536]),
             &ProviderID::Mistral => Ok(vec![SupportedEmbedderModels::MistralEmbed]),
+            &ProviderID::Ghs => Ok(vec![SupportedEmbedderModels::QwenQwen3Embedding4B]),
             _ => Err(anyhow!("Provider not supported for embeddings.")),
         }
     }
