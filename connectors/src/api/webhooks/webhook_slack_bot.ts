@@ -15,6 +15,10 @@ import {
   withTrace,
 } from "@connectors/api/webhooks/slack/utils";
 import { getBotUserIdMemoized } from "@connectors/connectors/slack/lib/bot_user_helpers";
+import {
+  ingestHotChannelMessage,
+  markHotStoreEventProcessed,
+} from "@connectors/connectors/slack/lib/hot_store";
 import { getSlackClient } from "@connectors/connectors/slack/lib/slack_client";
 import { ExternalOAuthTokenError } from "@connectors/lib/error";
 import mainLogger from "@connectors/logger/logger";
@@ -104,9 +108,47 @@ const _webhookSlackBotAPIHandler = async (
       "Processing webhook event"
     );
 
+    const ingestHotStoreEvent = async () => {
+      if (!event.channel) {
+        return;
+      }
+
+      try {
+        const slackConfig =
+          await SlackConfigurationResource.fetchByActiveBot(teamId);
+        if (!slackConfig) {
+          return;
+        }
+
+        const shouldIngest = await markHotStoreEventProcessed({
+          teamId,
+          eventId: reqBody.event_id,
+        });
+        if (!shouldIngest) {
+          return;
+        }
+
+        await ingestHotChannelMessage({
+          connectorId: slackConfig.connectorId,
+          channelId: event.channel,
+          event,
+          receivedAtMs: Date.now(),
+        });
+      } catch (error) {
+        logger.warn(
+          {
+            error,
+            slackChannelId: event.channel,
+          },
+          "Failed to ingest Slack message into hot store"
+        );
+      }
+    };
+
     try {
       switch (event.type) {
         case "app_mention": {
+          await ingestHotStoreEvent();
           await withTrace({
             "slack.team_id": teamId,
             "slack.app": "slack_bot",
@@ -117,6 +159,7 @@ const _webhookSlackBotAPIHandler = async (
          * `message` handler.
          */
         case "message": {
+          await ingestHotStoreEvent();
           if (event.channel_type === "im") {
             // Got a private message
             if (
@@ -165,7 +208,10 @@ const _webhookSlackBotAPIHandler = async (
               "slack.team_id": teamId,
               "slack.app": "slack_bot",
             })(handleChatBot)(req, res, logger);
-          } else if (event.channel_type === "channel") {
+          } else if (
+            event.channel_type === "channel" ||
+            event.channel_type === "group"
+          ) {
             if (
               !event.bot_id &&
               event.channel &&

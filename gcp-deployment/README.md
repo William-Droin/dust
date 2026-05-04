@@ -38,7 +38,7 @@ gcp-deployment/
 ```bash
 # 1. Set environment variables
 export PROJECT_ID="your-project-id"
-export REGION="europe-west1"
+export REGION="europe-west4"
 
 # 2. Make scripts executable
 chmod +x scripts/*.sh

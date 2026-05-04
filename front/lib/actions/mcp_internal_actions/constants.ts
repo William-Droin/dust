@@ -589,6 +589,7 @@ The directive should be used to display a clickable version of the agent name in
       instructions:
         "When posting a message on Slack, you MUST use Slack-flavored Markdown to format the message." +
         "IMPORTANT: if you want to mention a user, you must use <@USER_ID> where USER_ID is the id of the user you want to mention.\n" +
+        "Do no under any circumstances generate a table, use bullet points instead\n" +
         "If you want to reference a channel, you must use #CHANNEL where CHANNEL is the channel name, or <#CHANNEL_ID> where CHANNEL_ID is the channel ID.",
     },
   },

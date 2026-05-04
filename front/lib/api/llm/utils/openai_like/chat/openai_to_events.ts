@@ -4,6 +4,7 @@ import type { LLMEvent } from "@app/lib/api/llm/types/events";
 import { EventError } from "@app/lib/api/llm/types/events";
 import type { LLMClientMetadata } from "@app/lib/api/llm/types/options";
 import { parseToolArguments } from "@app/lib/api/llm/utils/tool_arguments";
+import logger from "@app/logger/logger";
 import { assertNever } from "@app/types";
 
 export async function* streamLLMEvents(
@@ -15,6 +16,8 @@ export async function* streamLLMEvents(
     number,
     { id: string; name: string; arguments: string }
   > = new Map();
+  const yieldedToolCallIds = new Set<string>();
+  let toolCallsFinishReasonCount = 0;
 
   for await (const chunk of chatCompletionStream) {
     const choice = chunk.choices[0];
@@ -85,6 +88,20 @@ export async function* streamLLMEvents(
           break;
 
         case "tool_calls":
+          toolCallsFinishReasonCount += 1;
+          if (toolCallsFinishReasonCount > 1) {
+            logger.warn(
+              {
+                chunkId: chunk.id,
+                clientId: metadata.clientId,
+                finishReasonCount: toolCallsFinishReasonCount,
+                modelId: metadata.modelId,
+                toolCallsCount: toolCalls.size,
+              },
+              "Provider stream emitted finish_reason=tool_calls more than once."
+            );
+          }
+
           if (textDelta) {
             yield {
               type: "text_generated",
@@ -94,9 +111,50 @@ export async function* streamLLMEvents(
               metadata,
             };
           }
+
+          const indexesByToolCallId = new Map<string, number[]>();
+          for (const [index, toolCall] of toolCalls.entries()) {
+            if (!toolCall.id) {
+              continue;
+            }
+
+            const indexes = indexesByToolCallId.get(toolCall.id) ?? [];
+            indexes.push(index);
+            indexesByToolCallId.set(toolCall.id, indexes);
+          }
+
+          for (const [toolCallId, indexes] of indexesByToolCallId.entries()) {
+            if (indexes.length > 1) {
+              logger.warn(
+                {
+                  chunkId: chunk.id,
+                  clientId: metadata.clientId,
+                  indexes,
+                  modelId: metadata.modelId,
+                  toolCallId,
+                },
+                "Provider stream produced duplicate tool_call ids across indexes."
+              );
+            }
+          }
+
           // Yield all tool calls.
           for (const toolCall of toolCalls.values()) {
             if (toolCall.id && toolCall.name) {
+              if (yieldedToolCallIds.has(toolCall.id)) {
+                logger.warn(
+                  {
+                    chunkId: chunk.id,
+                    clientId: metadata.clientId,
+                    modelId: metadata.modelId,
+                    toolCallId: toolCall.id,
+                  },
+                  "Skipping duplicate tool_call event from provider stream."
+                );
+                continue;
+              }
+
+              yieldedToolCallIds.add(toolCall.id);
               yield {
                 type: "tool_call",
                 content: {

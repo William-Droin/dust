@@ -94,6 +94,8 @@ async function findCallback(
   }: DataSourceFilesystemFindInputType & TagsInputType
 ): Promise<Result<CallToolResult["content"], MCPError>> {
   const coreAPI = new CoreAPI(config.getCoreAPIConfig(), logger);
+  const normalizedRootNodeId = rootNodeId || undefined;
+  const normalizedNextPageCursor = nextPageCursor || undefined;
 
   const fetchResult = await getAgentDataSourceConfigurations(auth, dataSources);
 
@@ -110,8 +112,8 @@ async function findCallback(
     return new Err(new MCPError(conflictingTags, { tracked: false }));
   }
 
-  const dataSourceNodeId = rootNodeId
-    ? extractDataSourceIdFromNodeId(rootNodeId)
+  const dataSourceNodeId = normalizedRootNodeId
+    ? extractDataSourceIdFromNodeId(normalizedRootNodeId)
     : null;
 
   // If rootNodeId is provided and is a data source node ID, search only in
@@ -129,12 +131,12 @@ async function findCallback(
     viewFilter = viewFilter.filter(
       (view) => view.data_source_id === dataSourceNodeId
     );
-  } else if (rootNodeId) {
+  } else if (normalizedRootNodeId) {
     // Checking that we do have access to the root node.
     const rootNodeSearchResult = await coreAPI.searchNodes({
       filter: {
         data_source_views: viewFilter,
-        node_ids: [rootNodeId],
+        node_ids: [normalizedRootNodeId],
       },
     });
     if (rootNodeSearchResult.isErr()) {
@@ -147,10 +149,10 @@ async function findCallback(
     // If we could not access the root node, we return an error early here.
     if (
       rootNodeSearchResult.value.nodes.length === 0 ||
-      rootNodeSearchResult.value.nodes[0].node_id !== rootNodeId
+      rootNodeSearchResult.value.nodes[0].node_id !== normalizedRootNodeId
     ) {
       return new Err(
-        new MCPError(`Could not find node: ${rootNodeId}`, {
+        new MCPError(`Could not find node: ${normalizedRootNodeId}`, {
           tracked: false,
         })
       );
@@ -158,7 +160,7 @@ async function findCallback(
 
     viewFilter = viewFilter.map((view) => ({
       ...view,
-      filter: [rootNodeId],
+      filter: [normalizedRootNodeId],
     }));
   }
 
@@ -169,7 +171,7 @@ async function findCallback(
       mime_types: mimeTypes ? { in: mimeTypes, not: null } : undefined,
     },
     options: {
-      cursor: nextPageCursor,
+      cursor: normalizedNextPageCursor,
       limit,
     },
   });

@@ -69,6 +69,72 @@ const config = {
       "SENDGRID_GENERIC_EMAIL_TEMPLATE_ID"
     );
   },
+
+  getOptionalSendgridApiKey: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable("SENDGRID_API_KEY");
+  },
+  getOptionalInvitationEmailTemplate: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable(
+      "SENDGRID_INVITATION_EMAIL_TEMPLATE_ID"
+    );
+  },
+  getOptionalGenericEmailTemplate: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable(
+      "SENDGRID_GENERIC_EMAIL_TEMPLATE_ID"
+    );
+  },
+
+  // Email provider (SMTP or SendGrid).
+  // Default to SMTP to make self-hosting easier.
+  getEmailProvider: (): "smtp" | "sendgrid" => {
+    const v =
+      EnvironmentConfig.getOptionalEnvVariable("EMAIL_PROVIDER")?.toLowerCase() ??
+      "smtp";
+    if (v !== "smtp" && v !== "sendgrid") {
+      throw new Error(
+        `Invalid EMAIL_PROVIDER value: ${v}. Expected "smtp" or "sendgrid".`
+      );
+    }
+    return v;
+  },
+  isWorkspaceCreationAllowedWithoutInvite: (): boolean => {
+    return (
+      EnvironmentConfig.getOptionalEnvVariable(
+        "ALLOW_WORKSPACE_CREATION_WITHOUT_INVITE"
+      )?.toLowerCase() === "true"
+    );
+  },
+  getSmtpHost: (): string => {
+    return EnvironmentConfig.getEnvVariable("SMTP_HOST");
+  },
+  getSmtpPort: (): number => {
+    const raw = EnvironmentConfig.getOptionalEnvVariable("SMTP_PORT") ?? "587";
+    const port = Number.parseInt(raw, 10);
+    if (!Number.isFinite(port)) {
+      throw new Error(`Invalid SMTP_PORT value: ${raw}`);
+    }
+    return port;
+  },
+  getSmtpSecure: (): boolean => {
+    const raw = EnvironmentConfig.getOptionalEnvVariable("SMTP_SECURE");
+    if (raw === undefined) {
+      // Common default: use STARTTLS on 587.
+      return false;
+    }
+    return raw.toLowerCase() === "true";
+  },
+  getSmtpUser: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable("SMTP_USER");
+  },
+  getSmtpPassword: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable("SMTP_PASSWORD");
+  },
+  getSmtpFromEmail: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable("SMTP_FROM_EMAIL");
+  },
+  getSmtpFromName: (): string | undefined => {
+    return EnvironmentConfig.getOptionalEnvVariable("SMTP_FROM_NAME");
+  },
   getStripeSecretKey: (): string => {
     return EnvironmentConfig.getEnvVariable("STRIPE_SECRET_KEY");
   },

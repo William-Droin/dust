@@ -64,7 +64,7 @@ export interface SlackWebhookEvent<T = string> {
   ts?: string; // slack message id
   thread_ts?: string; // slack thread id
   type?: string; // event type (eg: message)
-  channel_type?: "channel" | "im" | "mpim";
+  channel_type?: "channel" | "group" | "im" | "mpim";
   text: string; // content of the message
   old_name?: string; // when renaming channel: old channel name
   name?: string; // when renaming channel: new channel name
@@ -77,6 +77,8 @@ export type SlackWebhookReqBody = {
   type: string;
   challenge?: string;
   team_id: string;
+  event_id?: string;
+  event_time?: number;
 };
 
 export type SlackWebhookEventReqBody = SlackWebhookReqBody & {

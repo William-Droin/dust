@@ -251,7 +251,7 @@ export const InputBar = React.memo(function InputBar({
         fileUploaderService.resetUpload();
       }
     } else {
-      void onSubmit(markdown, mentions, {
+      const r = await onSubmit(markdown, mentions, {
         uploaded: fileUploaderService.getFileBlobs().map((cf) => {
           return {
             title: cf.filename,
@@ -262,9 +262,18 @@ export const InputBar = React.memo(function InputBar({
         contentNodes: attachedNodes,
       });
 
-      resetEditorText();
-      fileUploaderService.resetUpload();
-      setAttachedNodes([]);
+      if (r.isOk()) {
+        resetEditorText();
+        fileUploaderService.resetUpload();
+        setAttachedNodes([]);
+      } else {
+        console.error("[InputBar] Failed to submit message", {
+          conversationId,
+          error: r.error,
+        });
+        // Make the failure visible to the user (otherwise the cleared input looks like a silent drop).
+        setAnimate(true);
+      }
     }
   };
 

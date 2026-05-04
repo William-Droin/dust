@@ -11,7 +11,6 @@ import {
   StopIcon,
   useCopyToClipboard,
 } from "@dust-tt/sparkle";
-import { useVirtuosoMethods } from "@virtuoso.dev/message-list";
 import { marked } from "marked";
 import React, { useCallback, useMemo } from "react";
 import type { Components } from "react-markdown";
@@ -59,6 +58,7 @@ import {
   visualizationDirective,
 } from "@app/components/markdown/VisualizationBlock";
 import { useAgentMessageStream } from "@app/hooks/useAgentMessageStream";
+import { useConversationListMethods } from "@app/components/assistant/conversation/ConversationListContext";
 import { isImageProgressOutput } from "@app/lib/actions/mcp_internal_actions/output_schemas";
 import {
   agentMentionDirective,
@@ -344,10 +344,7 @@ export function AgentMessage({
   // since failed messages have their own retry button in ErrorMessage.
   // Also, don't show the retry button if the agent message is handing over to another agent since we don't want to retry a message that has generated another agent response.
   // This is to be removed as soon as we have branching in the conversation.
-  const methods = useVirtuosoMethods<
-    VirtuosoMessage,
-    VirtuosoMessageListContext
-  >();
+  const methods = useConversationListMethods();
 
   const isAgentMessageHandingOver = methods.data
     .get()
@@ -544,10 +541,7 @@ function AgentMessageContent({
     }[]
   ) => void;
 }) {
-  const methods = useVirtuosoMethods<
-    VirtuosoMessage,
-    VirtuosoMessageListContext
-  >();
+  const methods = useConversationListMethods();
   const agentMessage = messageStreamState.message;
   const { sId, configuration: agentConfiguration } = agentMessage;
 

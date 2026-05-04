@@ -199,6 +199,13 @@ export async function constructPromptMultiActions(
   } else if (fallbackPrompt) {
     instructions += `${fallbackPrompt}\n`;
   }
+  if (userMessage.context.origin === "slack") {
+    context +=
+      "# SLACK FORMAT\n" +
+      "Do not generate tables under any circumstances. " +
+      "Never use markdown tables, ASCII tables, or code-fenced tables. If content is tabular, rewrite it as bullets or key:value rows."
+      "If the user asks specifically for a table then indicate that tables can only be generated inside the Dust UI not Slack\n";
+  }
 
   // Replacement if instructions include "{USER_FULL_NAME}".
   instructions = instructions.replaceAll(

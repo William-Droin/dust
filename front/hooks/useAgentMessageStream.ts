@@ -1,8 +1,7 @@
-import type { VirtuosoMessageListMethods } from "@virtuoso.dev/message-list";
-import { useVirtuosoMethods } from "@virtuoso.dev/message-list";
 import _ from "lodash";
 import { useCallback, useMemo, useRef } from "react";
 
+import { useConversationListMethods } from "@app/components/assistant/conversation/ConversationListContext";
 import type {
   AgentMessageStateWithControlEvent,
   MessageTemporaryState,
@@ -33,10 +32,7 @@ const updateMessageThrottled = _.throttle(
   }: {
     chainOfThought: string;
     content: string;
-    methods: VirtuosoMessageListMethods<
-      VirtuosoMessage,
-      VirtuosoMessageListContext
-    >;
+    methods: ReturnType<typeof useConversationListMethods>;
     sId: string;
   }) => {
     methods.data.map((m) => {
@@ -107,10 +103,7 @@ export function useAgentMessageStream({
   streamId,
 }: UseAgentMessageStreamParams) {
   const sId = getMessageSId(messageStreamState);
-  const methods = useVirtuosoMethods<
-    VirtuosoMessage,
-    VirtuosoMessageListContext
-  >();
+  const methods = useConversationListMethods();
 
   const shouldStream = useMemo(
     () =>
@@ -118,6 +111,14 @@ export function useAgentMessageStream({
       messageStreamState.agentState !== "placeholder",
     [messageStreamState.message.status, messageStreamState.agentState]
   );
+
+  if (!shouldStream) {
+    console.warn("[message-stream] streaming disabled", {
+      messageId: messageStreamState.message.sId,
+      status: messageStreamState.message.status,
+      agentState: messageStreamState.agentState,
+    });
+  }
 
   const isFreshMountWithContent = useRef(
     shouldStream &&
@@ -132,6 +133,11 @@ export function useAgentMessageStream({
 
   const buildEventSourceURL = useCallback(
     (lastEvent: string | null) => {
+      console.warn("[message-stream] building SSE URL", {
+        messageId: sId,
+        conversationId,
+        lastEvent,
+      });
       const esURL = `/api/w/${owner.sId}/assistant/conversations/${conversationId}/messages/${sId}/events`;
       let lastEventId = "";
       if (lastEvent) {
@@ -143,7 +149,12 @@ export function useAgentMessageStream({
         isFreshMountWithContent.current = false;
       }
 
-      return esURL + "?lastEventId=" + lastEventId;
+      const fullUrl = esURL + "?lastEventId=" + lastEventId;
+      console.warn("[message-stream] SSE URL", {
+        messageId: sId,
+        url: fullUrl,
+      });
+      return fullUrl;
     },
     [conversationId, sId, owner.sId]
   );
@@ -155,6 +166,13 @@ export function useAgentMessageStream({
         data: AgentMessageStateWithControlEvent;
       } = JSON.parse(eventStr);
       const eventType = eventPayload.data.type;
+      console.warn("[message-stream] received event", {
+        messageId: sId,
+        eventId: eventPayload.eventId,
+        eventType,
+        status: messageStreamState.message.status,
+        agentState: messageStreamState.agentState,
+      });
       switch (eventType) {
         case "end-of-stream":
           // This event is emitted in front/lib/api/assistant/pubsub.ts. Its purpose is to signal the

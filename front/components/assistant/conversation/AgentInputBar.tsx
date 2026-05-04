@@ -4,12 +4,15 @@ import {
   Button,
   StopIcon,
 } from "@dust-tt/sparkle";
-import {
-  useVirtuosoLocation,
-  useVirtuosoMethods,
-} from "@virtuoso.dev/message-list";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
+import { useConversationListMethods } from "@app/components/assistant/conversation/ConversationListContext";
 import { GenerationContext } from "@app/components/assistant/conversation/GenerationContextProvider";
 import { InputBar } from "@app/components/assistant/conversation/input_bar/InputBar";
 import type {
@@ -25,11 +28,11 @@ import { isAgentMention } from "@app/types";
 
 const MAX_DISTANCE_FOR_SMOOTH_SCROLL = 2048;
 
-export const AgentInputBar = ({
+export const AgentInputBar = React.memo(function AgentInputBar({
   context,
 }: {
   context: VirtuosoMessageListContext;
-}) => {
+}) {
   const generationContext = useContext(GenerationContext);
 
   if (!generationContext) {
@@ -51,7 +54,7 @@ export const AgentInputBar = ({
   const isGenerating = !!generationContext.generatingMessages.length;
 
   const isMobile = useIsMobile();
-  const methods = useVirtuosoMethods<VirtuosoMessage>();
+  const methods = useConversationListMethods();
   const lastUserMessage = methods.data
     .get()
     .findLast(
@@ -74,9 +77,7 @@ export const AgentInputBar = ({
     return lastUserMessage.mentions.filter(isAgentMention);
   }, [lastUserMessage, context.agentBuilderContext?.draftAgent]);
 
-  const { bottomOffset } = useVirtuosoLocation();
-  const distanceUntilButtonVisible = 100;
-  const showScrollToBottomButton = bottomOffset >= distanceUntilButtonVisible;
+  const showScrollToBottomButton = !methods.isAtBottom;
   const showClearButton =
     context.agentBuilderContext?.resetConversation && !isGenerating;
   const showStopButton = generationContext.generatingMessages.some(
@@ -88,9 +89,19 @@ export const AgentInputBar = ({
       index: "LAST",
       align: "end",
       behavior:
-        bottomOffset < MAX_DISTANCE_FOR_SMOOTH_SCROLL ? "smooth" : "instant",
+        methods.isAtBottom &&
+        listStateIsCloseToBottom(methods.data.get(), MAX_DISTANCE_FOR_SMOOTH_SCROLL)
+          ? "smooth"
+          : "instant",
     });
-  }, [bottomOffset, methods]);
+  }, [methods]);
+
+  const listStateIsCloseToBottom = (
+    items: VirtuosoMessage[],
+    _distance: number
+  ) => {
+    return items.length < 15;
+  };
 
   const [isStopping, setIsStopping] = useState<boolean>(false);
 
@@ -184,4 +195,4 @@ export const AgentInputBar = ({
       />
     </div>
   );
-};
+});

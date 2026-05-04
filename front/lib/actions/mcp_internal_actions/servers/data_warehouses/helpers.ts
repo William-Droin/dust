@@ -27,6 +27,7 @@ export async function getAvailableWarehouses(
   >
 > {
   const coreAPI = new CoreAPI(config.getCoreAPIConfig(), logger);
+  const normalizedNextPageCursor = nextPageCursor || undefined;
   const dataSourceViewFilter = makeCoreSearchNodesFilters({
     agentDataSourceConfigurations: dataSourceConfigurations,
     includeTagFilters: false,
@@ -39,7 +40,7 @@ export async function getAvailableWarehouses(
       data_source_views: dataSourceViewFilter,
     },
     options: {
-      cursor: nextPageCursor,
+      cursor: normalizedNextPageCursor,
       limit,
       sort: [{ field: "timestamp", direction: "desc" as const }],
     },
@@ -87,10 +88,12 @@ export async function getWarehouseNodes(
   >
 > {
   const coreAPI = new CoreAPI(config.getCoreAPIConfig(), logger);
+  const normalizedNodeId = nodeId || null;
+  const normalizedNextPageCursor = nextPageCursor || undefined;
 
   let configsToUse: ResolvedDataSourceConfiguration[] =
     dataSourceConfigurations;
-  let parentIdToUse: string | null = nodeId;
+  let parentIdToUse: string | null = normalizedNodeId;
 
   // When listing a warehouse root, we may want to surface the view roots directly
   // (tables/schemas explicitly included in the view) even if their parent folders
@@ -100,8 +103,8 @@ export async function getWarehouseNodes(
   let nodeIdsToUse: string[] | undefined = undefined;
   let dataSourceById: Record<string, DataSourceResource | null> | null = null;
 
-  if (nodeId && nodeId.startsWith("warehouse-")) {
-    const dataSourceId = nodeId.substring("warehouse-".length);
+  if (normalizedNodeId && normalizedNodeId.startsWith("warehouse-")) {
+    const dataSourceId = normalizedNodeId.substring("warehouse-".length);
     const dataSource = await DataSourceResource.fetchById(auth, dataSourceId);
     if (!dataSource) {
       return new Err(
@@ -162,7 +165,7 @@ export async function getWarehouseNodes(
       node_ids: nodeIdsToUse,
     },
     options: {
-      cursor: nextPageCursor,
+      cursor: normalizedNextPageCursor,
       limit,
       sort: query
         ? undefined

@@ -599,9 +599,10 @@ describe("/api/v1/viz/files/[fileId] security tests", () => {
       );
 
       // Use a new request to avoid state carry-over. But reuse same workspace and key.
-      childReq.headers = {
-        authorization: "Bearer " + key.secret,
-      };
+      childReq.headers =
+        {
+          authorization: "Bearer " + key.secret,
+        } as any;
       childReq.query.wId = workspace.sId;
 
       // Create sub-conversation B that references parent message using API.
@@ -735,9 +736,10 @@ describe("/api/v1/viz/files/[fileId] security tests", () => {
         });
 
       // Use a new request to avoid state carry-over. But reuse same workspace and key.
-      conversationBReq.headers = {
-        authorization: "Bearer " + key.secret,
-      };
+      conversationBReq.headers =
+        {
+          authorization: "Bearer " + key.secret,
+        } as any;
       conversationBReq.query.wId = workspace.sId;
 
       // Create another unrelated conversation B using API.

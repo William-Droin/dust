@@ -68,9 +68,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       webhookSourceUrlSecret: webhookSource.urlSecret,
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "application/json",
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+      } as any;
 
     await handler(req, res);
 
@@ -95,9 +96,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       webhookSourceUrlSecret: "any-secret",
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "application/json",
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+      } as any;
 
     await handler(req, res);
 
@@ -134,9 +136,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       webhookSourceUrlSecret: "any-secret",
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "text/plain",
-    };
+    req.headers =
+      {
+        "content-type": "text/plain",
+      } as any;
 
     await handler(req, res);
 
@@ -167,9 +170,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       webhookSourceUrlSecret: "invalid-secret", // Using wrong secret
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "application/json",
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+      } as any;
 
     await handler(req, res);
 
@@ -200,9 +204,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       // Missing webhookSourceUrlSecret parameter (it will be undefined)
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "application/json",
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+      } as any;
 
     await handler(req, res);
 
@@ -237,9 +242,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       webhookSourceUrlSecret: customUrlSecret, // Using the correct secret
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "application/json",
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+      } as any;
 
     await handler(req, res);
 
@@ -258,9 +264,10 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
       webhookSourceUrlSecret: undefined,
     };
     req.body = { any: "payload" };
-    req.headers = {
-      "content-type": "application/json",
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+      } as any;
 
     await handler(req, res);
 
@@ -311,10 +318,11 @@ describe("POST /api/v1/w/[wId]/triggers/hooks/[webhookSourceId]/[webhookSourceUr
         login: "octocat",
       },
     };
-    req.headers = {
-      "content-type": "application/json",
-      "x-github-event": "pull_request", // This is the GitHub event header
-    };
+    req.headers =
+      {
+        "content-type": "application/json",
+        "x-github-event": "pull_request", // This is the GitHub event header
+      } as any;
 
     await handler(req, res);
 

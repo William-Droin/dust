@@ -9,6 +9,7 @@ import { AuthFlowError } from "@app/lib/iam/errors";
 import type { SessionWithUser } from "@app/lib/iam/provider";
 import { getUserFromSession } from "@app/lib/iam/session";
 import { createOrUpdateUser, fetchUserFromSession } from "@app/lib/iam/users";
+import config from "@app/lib/api/config";
 import { MembershipInvitationResource } from "@app/lib/resources/membership_invitation_resource";
 import { MembershipResource } from "@app/lib/resources/membership_resource";
 import { ServerSideTracking } from "@app/lib/tracking/server";
@@ -122,6 +123,18 @@ async function handler(
             email: user.email,
           })
         : null;
+
+    if (
+      !config.isWorkspaceCreationAllowedWithoutInvite() &&
+      memberships.length === 0 &&
+      !membershipInvite &&
+      (!pendingInvitations || pendingInvitations.length === 0)
+    ) {
+      res.redirect(
+        "/login-error?type=login&reason=no-membership-or-invite"
+      );
+      return;
+    }
 
     // More than one pending invitation, redirect to invite choose page - otherwise use the first one.
     if (pendingInvitations && pendingInvitations.length > 1) {

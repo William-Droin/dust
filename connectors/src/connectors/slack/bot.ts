@@ -36,6 +36,13 @@ import {
   SlackExternalUserError,
   SlackMessageError,
 } from "@connectors/connectors/slack/lib/errors";
+import type { HotSlackMessage } from "@connectors/connectors/slack/lib/hot_store";
+import {
+  formatHotChannelMessages,
+  getRecentHotChannelMessages,
+  hydrateHotChannelFromSlack,
+  isHotChannelHydrated,
+} from "@connectors/connectors/slack/lib/hot_store";
 import { formatMessagesForUpsert } from "@connectors/connectors/slack/lib/messages";
 import type { SlackUserInfo } from "@connectors/connectors/slack/lib/slack_client";
 import {
@@ -759,6 +766,7 @@ async function answerMessage(
     slackClient,
     dustAPI,
     slackChannel,
+    slackMessageTs,
     slackThreadTs || slackMessageTs,
     lastSlackChatBotMessage?.messageTs || slackThreadTs || slackMessageTs,
     connector,
@@ -1160,6 +1168,7 @@ async function makeContentFragments(
   slackClient: WebClient,
   dustAPI: DustAPI,
   channelId: string,
+  currentMessageTs: string,
   threadTs: string,
   startingAtTs: string | null,
   connector: ConnectorResource,
@@ -1168,6 +1177,38 @@ async function makeContentFragments(
 ): Promise<Result<PublicPostContentFragmentRequestBody[] | null, Error>> {
   const allContentFragments: PublicPostContentFragmentRequestBody[] = [];
   let allMessages: MessageElement[] = [];
+  let recentChannelMessages: HotSlackMessage[] = [];
+  try {
+    recentChannelMessages = await getRecentHotChannelMessages({
+      connectorId: connector.id,
+      channelId,
+      beforeTs: currentMessageTs,
+      limit: 100,
+    });
+
+    const isChannelHydrated = await isHotChannelHydrated({
+      connectorId: connector.id,
+      channelId,
+    });
+    if (!isChannelHydrated) {
+      recentChannelMessages = await hydrateHotChannelFromSlack({
+        connectorId: connector.id,
+        slackClient,
+        channelId,
+        beforeTs: currentMessageTs,
+        limit: 100,
+      });
+    }
+  } catch (error) {
+    logger.warn(
+      {
+        error,
+        connectorId: connector.id,
+        channelId,
+      },
+      "Failed to load recent channel messages from Slack hot store"
+    );
+  }
 
   const slackBotMessages = await SlackChatBotMessage.findAll({
     where: {
@@ -1372,10 +1413,23 @@ async function makeContentFragments(
   }
 
   // Prepend $url to the content to make it available to the model.
-  const sectionHeader = `This only shows user-generated messages since ${startingAtTs} in #${channelName}. Look at the conversation history for the full thread.\n`;
-  const section = document
-    ? `$url: ${url}\n${sectionHeader}${sectionFullText(document)}`
-    : `$url: ${url}\n${sectionHeader}`;
+  const recentChannelSection = formatHotChannelMessages({
+    channelName: `#${channelName}`,
+    beforeTs: currentMessageTs,
+    messages: recentChannelMessages,
+  });
+  const threadSectionHeader = `This only shows user-generated messages since ${startingAtTs} in #${channelName}. Look at the conversation history for the full thread.\n`;
+  const threadSection = document
+    ? `${threadSectionHeader}${sectionFullText(document)}`
+    : threadSectionHeader;
+  const sectionParts = [
+    `$url: ${url}`,
+    recentChannelSection
+      ? `<recent_channel_context>\n${recentChannelSection}\n</recent_channel_context>`
+      : null,
+    `<active_thread_context>\n${threadSection}\n</active_thread_context>`,
+  ].filter(Boolean);
+  const section = sectionParts.join("\n\n");
 
   const contentType = "text/vnd.dust.attachment.slack.thread";
   const fileName = `slack_thread-${channelName}-${threadTs}.txt`;

@@ -87,6 +87,8 @@ function createServer(
       async ({ nodeId, limit, nextPageCursor, dataSources }) => {
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         const effectiveLimit = Math.min(limit || DEFAULT_LIMIT, MAX_LIMIT);
+        const normalizedNodeId = nodeId || null;
+        const normalizedNextPageCursor = nextPageCursor || undefined;
 
         const dataSourceConfigurationsResult =
           await getAgentDataSourceConfigurations(
@@ -115,19 +117,19 @@ function createServer(
         }
 
         const result =
-          nodeId === null
+          normalizedNodeId === null
             ? await getAvailableWarehouses(
                 auth,
                 agentDataSourceConfigurations,
                 {
                   limit: effectiveLimit,
-                  nextPageCursor,
+                  nextPageCursor: normalizedNextPageCursor,
                 }
               )
             : await getWarehouseNodes(auth, agentDataSourceConfigurations, {
-                nodeId,
+                nodeId: normalizedNodeId,
                 limit: effectiveLimit,
-                nextPageCursor,
+                nextPageCursor: normalizedNextPageCursor,
               });
 
         if (result.isErr()) {
@@ -140,7 +142,7 @@ function createServer(
           {
             type: "resource" as const,
             resource: makeBrowseResource({
-              nodeId,
+              nodeId: normalizedNodeId,
               nodes,
               nextPageCursor: newCursor,
               resultCount: dataSources.length,
@@ -202,6 +204,8 @@ function createServer(
       async ({ query, rootNodeId, limit, nextPageCursor, dataSources }) => {
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         const effectiveLimit = Math.min(limit || DEFAULT_LIMIT, MAX_LIMIT);
+        const normalizedRootNodeId = rootNodeId || null;
+        const normalizedNextPageCursor = nextPageCursor || undefined;
 
         const dataSourceConfigurationsResult =
           await getAgentDataSourceConfigurations(
@@ -233,10 +237,10 @@ function createServer(
           auth,
           agentDataSourceConfigurations,
           {
-            nodeId: rootNodeId ?? null,
+            nodeId: normalizedRootNodeId,
             query,
             limit: effectiveLimit,
-            nextPageCursor,
+            nextPageCursor: normalizedNextPageCursor,
           }
         );
 
@@ -250,7 +254,7 @@ function createServer(
           {
             type: "resource" as const,
             resource: makeBrowseResource({
-              nodeId: rootNodeId ?? null,
+              nodeId: normalizedRootNodeId,
               nodes,
               nextPageCursor: newCursor,
               resultCount: dataSources.length,

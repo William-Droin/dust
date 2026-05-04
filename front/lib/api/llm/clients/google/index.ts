@@ -22,6 +22,7 @@ import { handleError } from "./utils/errors";
 
 export class GoogleLLM extends LLM {
   private client: GoogleGenAI;
+  private apiKey: string;
 
   constructor(
     auth: Authenticator,
@@ -29,14 +30,9 @@ export class GoogleLLM extends LLM {
   ) {
     super(auth, overwriteLLMParameters(llmParameters));
     const { GOOGLE_AI_STUDIO_API_KEY } = dustManagedCredentials();
-    if (!GOOGLE_AI_STUDIO_API_KEY) {
-      throw new Error(
-        "GOOGLE_AI_STUDIO_API_KEY environment variable is required"
-      );
-    }
-
+    this.apiKey = GOOGLE_AI_STUDIO_API_KEY ?? "";
     this.client = new GoogleGenAI({
-      apiKey: GOOGLE_AI_STUDIO_API_KEY,
+      apiKey: this.apiKey,
     });
   }
 
@@ -46,6 +42,11 @@ export class GoogleLLM extends LLM {
     specifications,
   }: LLMStreamParameters): AsyncGenerator<LLMEvent> {
     try {
+      if (!this.apiKey) {
+        throw new Error(
+          "GOOGLE_AI_STUDIO_API_KEY environment variable is required to use Google AI Studio models."
+        );
+      }
       const contents = await Promise.all(
         conversation.messages.map((message) => toContent(message, this.modelId))
       );

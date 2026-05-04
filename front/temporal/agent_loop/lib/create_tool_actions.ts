@@ -15,6 +15,7 @@ import { createMCPAction } from "@app/lib/api/mcp/create_mcp";
 import type { Authenticator } from "@app/lib/auth";
 import type { AgentMessage } from "@app/lib/models/assistant/conversation";
 import { AgentStepContentResource } from "@app/lib/resources/agent_step_content_resource";
+import logger from "@app/logger/logger";
 import { updateResourceAndPublishEvent } from "@app/temporal/agent_loop/activities/common";
 import type {
   AgentActionsEvent,
@@ -62,11 +63,29 @@ export async function createToolActionsActivity(
     MCPApproveExecutionEvent,
     "isLastBlockingEventForStep"
   >[] = [];
+  const seenFunctionCallIds = new Set<string>();
 
   for (const [
     index,
     { action: actionConfiguration, functionCallId },
   ] of actions.entries()) {
+    if (seenFunctionCallIds.has(functionCallId)) {
+      logger.warn(
+        {
+          actionName: actionConfiguration.name,
+          agentMessageId: agentMessage.sId,
+          conversationId: conversation.sId,
+          functionCallId,
+          step,
+          workspaceId: conversation.owner.sId,
+        },
+        "Skipping duplicate functionCallId before MCP action creation."
+      );
+      continue;
+    }
+
+    seenFunctionCallIds.add(functionCallId);
+
     const stepContentId = functionCallStepContentIds[functionCallId];
 
     const result = await createActionForTool(auth, {

@@ -6,8 +6,21 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "gce"
 spec:
-  defaultBackend:
-    service:
-      name: front
-      port:
-        number: 3000
+  rules:
+    - host: dust.ghs.fr
+      http:
+        paths:
+          - path: /webhooks
+            pathType: Prefix
+            backend:
+              service:
+                name: connectors-web
+                port:
+                  number: 3002
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: front
+                port:
+                  number: 3000

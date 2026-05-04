@@ -89,7 +89,7 @@ cd dust
 ```bash
 # Set your project configuration
 export PROJECT_ID="your-gcp-project-id"
-export REGION="europe-west1"  # or us-central1
+export REGION="europe-west4"  # or us-central1
 export BILLING_ACCOUNT_ID="your-billing-account-id"  # Optional
 
 # Make scripts executable

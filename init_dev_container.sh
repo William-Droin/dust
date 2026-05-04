@@ -38,6 +38,7 @@ psql "postgres://dev:dev@localhost:5432/" -c "CREATE DATABASE dust_oauth;";
 ## Initilizing Qdrant collections
 cd core/
 cargo run --bin qdrant_create_collection -- --cluster cluster-0 --provider openai --model text-embedding-3-large-1536
+# cargo run --release --bin qdrant_create_collection -- --cluster cluster-0 --provider openai --model text-embedding-3-large-1536
 cd -
 
 ## Initializing Elasticsearch indices

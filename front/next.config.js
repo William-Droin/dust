@@ -38,6 +38,9 @@ const withBundleAnalyzer = bundleAnalyzer({
 const config = {
   transpilePackages: ["@uiw/react-textarea-code-editor"],
   // As of Next 14.2.3 swc minification creates a bug in the generated client side files.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   swcMinify: false,
   onDemandEntries: {
     // Keep dev-compiled pages around longer to avoid re-compiles on nav

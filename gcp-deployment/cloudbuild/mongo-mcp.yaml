@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-mcp
+  namespace: mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-mcp
+  template:
+    metadata:
+      labels:
+        app: mongodb-mcp
+    spec:
+      nodeSelector:
+        node-restriction.kubernetes.io/workload: mcp-private
+      tolerations:
+        - key: "workload"
+          operator: "Equal"
+          value: "mcp-private"
+          effect: "NoSchedule"
+      containers:
+        - name: mongodb-mcp
+          image: mongodb/mongodb-mcp-server:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--transport"
+            - "http"
+            - "--httpHost"
+            - "0.0.0.0"
+            - "--httpPort"
+            - "3000"
+            - "--readOnly"
+            - "--loggers"
+            - "stderr"
+          env:
+            - name: MDB_MCP_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-mcp-secret
+                  key: MDB_MCP_CONNECTION_STRING
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-mcp
+  namespace: mcp
+spec:
+  type: ClusterIP
+  selector:
+    app: mongodb-mcp
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP

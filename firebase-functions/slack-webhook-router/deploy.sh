@@ -20,6 +20,7 @@ GCP_GLOBAL_PROJECT_ID=$GCP_GLOBAL_PROJECT_ID
 GCP_US_PROJECT_ID=$GCP_US_PROJECT_ID
 GCP_EU_PROJECT_ID=$GCP_EU_PROJECT_ID
 SERVICE_ACCOUNT=slack-webhook-router-sa@$GCP_GLOBAL_PROJECT_ID.iam.gserviceaccount.com
+EU_CONNECTOR_URL=https://dust.ghs.fr
 EOF
 
 echo "🏗️ Building TypeScript..."

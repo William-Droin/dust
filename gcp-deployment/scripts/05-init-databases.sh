@@ -37,85 +37,95 @@ gcloud config set project "${PROJECT_ID}"
 gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" --region="${REGION}"
 
 # =============================================================================
-# RUN FRONT DATABASE MIGRATIONS
+# LOCATE CORE POD (needed by init steps below)
 # =============================================================================
-log_info "Running Front database migrations..."
-
-# Get a front pod
-FRONT_POD=$(kubectl get pods -n ${NAMESPACE} -l app=front -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
-
-if [[ -n "${FRONT_POD}" ]]; then
-    log_info "Using pod: ${FRONT_POD}"
-    
-    # Run database sync (creates tables)
-    kubectl exec -n ${NAMESPACE} "${FRONT_POD}" -- \
-        npx tsx admin/db.ts || log_warn "Front DB migration may have failed"
-    
-    log_info "Front database initialized"
-else
-    log_error "No front pod found. Deploy applications first."
+# Some sections of this script may be commented out during debugging/bring-up. We still need a
+# `CORE_POD` value for any step that execs into core.
+CORE_POD=${CORE_POD:-""}
+if [[ -z "${CORE_POD}" ]]; then
+    CORE_POD=$(kubectl get pods -n ${NAMESPACE} -l app=core -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
 fi
 
-# =============================================================================
-# RUN CONNECTORS DATABASE MIGRATIONS
-# =============================================================================
-log_info "Running Connectors database migrations..."
+# # =============================================================================
+# # RUN FRONT DATABASE MIGRATIONS
+# # =============================================================================
+# log_info "Running Front database migrations..."
 
-CONNECTORS_POD=$(kubectl get pods -n ${NAMESPACE} -l app=connectors-web -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+# # Get a front pod
+# FRONT_POD=$(kubectl get pods -n ${NAMESPACE} -l app=front -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
 
-if [[ -n "${CONNECTORS_POD}" ]]; then
-    log_info "Using pod: ${CONNECTORS_POD}"
+# if [[ -n "${FRONT_POD}" ]]; then
+#     log_info "Using pod: ${FRONT_POD}"
     
-    # Run sequelize sync
-    kubectl exec -n ${NAMESPACE} "${CONNECTORS_POD}" -- \
-        npm run initdb -- --unsafe 2>/dev/null || log_warn "Connectors DB migration may have failed"
+#     # Run database sync (creates tables)
+#     kubectl exec -n ${NAMESPACE} "${FRONT_POD}" -- \
+#         npx tsx admin/db.ts || log_warn "Front DB migration may have failed"
     
-    log_info "Connectors database initialized"
-else
-    log_warn "No connectors pod found."
-fi
+#     log_info "Front database initialized"
+# else
+#     log_error "No front pod found. Deploy applications first."
+# fi
 
-# =============================================================================
-# RUN CORE DATABASE MIGRATIONS
-# =============================================================================
-log_info "Running Core database migrations..."
+# # =============================================================================
+# # RUN CONNECTORS DATABASE MIGRATIONS
+# # =============================================================================
+# log_info "Running Connectors database migrations..."
 
-CORE_POD=$(kubectl get pods -n ${NAMESPACE} -l app=core -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+# CONNECTORS_POD=$(kubectl get pods -n ${NAMESPACE} -l app=connectors-web -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
 
-if [[ -n "${CORE_POD}" ]]; then
-    log_info "Using pod: ${CORE_POD}"
+# if [[ -n "${CONNECTORS_POD}" ]]; then
+#     log_info "Using pod: ${CONNECTORS_POD}"
     
-    # Run cargo migration
-    kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
-        cargo run --release --bin init_db 2>/dev/null || log_warn "Core DB migration may have failed"
+#     # Run sequelize sync
+#     kubectl exec -n ${NAMESPACE} "${CONNECTORS_POD}" -- \
+#         npm run initdb -- --unsafe 2>/dev/null || log_warn "Connectors DB migration may have failed"
     
-    log_info "Core database initialized"
-else
-    log_warn "No core pod found."
-fi
+#     log_info "Connectors database initialized"
+# else
+#     log_warn "No connectors pod found."
+# fi
 
-# =============================================================================
-# INITIALIZE ELASTICSEARCH INDICES
-# =============================================================================
-log_info "Initializing Elasticsearch indices..."
+# # =============================================================================
+# # RUN CORE DATABASE MIGRATIONS
+# # =============================================================================
+# log_info "Running Core database migrations..."
 
-if [[ -n "${CORE_POD}" ]]; then
-    # Create data_sources_nodes index
-    kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
-        cargo run --release --bin elasticsearch_create_index -- \
-        --index-name data_sources_nodes --index-version 4 --skip-confirmation \
-        2>/dev/null || log_warn "Failed to create data_sources_nodes index"
+# CORE_POD=$(kubectl get pods -n ${NAMESPACE} -l app=core -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+
+# if [[ -n "${CORE_POD}" ]]; then
+#     log_info "Using pod: ${CORE_POD}"
     
-    # Create data_sources index
-    kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
-        cargo run --release --bin elasticsearch_create_index -- \
-        --index-name data_sources --index-version 1 --skip-confirmation \
-        2>/dev/null || log_warn "Failed to create data_sources index"
+#     # Run cargo migration
+#     kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
+#         cargo run --release --bin init_db 2>/dev/null || log_warn "Core DB migration may have failed"
     
-    log_info "Elasticsearch indices created"
-else
-    log_warn "Cannot initialize Elasticsearch without core pod"
-fi
+#     log_info "Core database initialized"
+# else
+#     log_warn "No core pod found."
+# fi
+
+# # =============================================================================
+# # INITIALIZE ELASTICSEARCH INDICES
+# # =============================================================================
+# log_info "Initializing Elasticsearch indices..."
+
+# if [[ -n "${CORE_POD}" ]]; then
+#     # Create data_sources_nodes index
+#     kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
+#         cargo run --release --bin elasticsearch_create_index -- \
+#         --index-name data_sources_nodes --index-version 4 --skip-confirmation \
+#         2>/dev/null || log_warn "Failed to create data_sources_nodes index"
+    
+#     # Create data_sources index
+#     kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
+#         cargo run --release --bin elasticsearch_create_index -- \
+#         --index-name data_sources --index-version 1 --skip-confirmation \
+#         2>/dev/null || log_warn "Failed to create data_sources index"
+    
+#     log_info "Elasticsearch indices created"
+# else
+#     log_warn "Cannot initialize Elasticsearch without core pod"
+# fi
 
 # =============================================================================
 # INITIALIZE QDRANT COLLECTIONS
@@ -123,35 +133,38 @@ fi
 log_info "Initializing Qdrant collections..."
 
 if [[ -n "${CORE_POD}" ]]; then
-    # Create embeddings collection
-    kubectl exec -n ${NAMESPACE} "${CORE_POD}" -- \
-        cargo run --release --bin qdrant_create_collection -- \
-        --cluster cluster-0 --provider openai --model text-embedding-3-large-1536 \
-        2>/dev/null || log_warn "Failed to create Qdrant collection"
-    
+    # NOTE: qdrant_create_collection prompts for confirmation via stdin.
+    # We keep stdin open (-i) and pipe `y` to run non-interactively.
+    # Also: do NOT redirect stderr to /dev/null; cargo/qdrant errors are printed on stderr.
+    if ! kubectl exec -n ${NAMESPACE} -i "${CORE_POD}" -- sh -lc \
+        "printf 'y\\n' | cargo run --release --bin qdrant_create_collection -- \
+          --cluster cluster-0 --provider ghs --model qwen/qwen3-embedding-4b"; then
+        log_warn "Failed to create Qdrant collection"
+    fi
+
     log_info "Qdrant collections created"
 else
     log_warn "Cannot initialize Qdrant without core pod"
 fi
 
-# =============================================================================
-# INITIALIZE DUST APPS (Optional)
-# =============================================================================
-log_info "Initializing Dust built-in apps..."
+# # =============================================================================
+# # INITIALIZE DUST APPS (Optional)
+# # =============================================================================
+# log_info "Initializing Dust built-in apps..."
 
-if [[ -n "${FRONT_POD}" ]]; then
-    # Initialize plans
-    kubectl exec -n ${NAMESPACE} "${FRONT_POD}" -- \
-        npx tsx admin/init_plans.ts 2>/dev/null || log_warn "Failed to init plans"
+# if [[ -n "${FRONT_POD}" ]]; then
+#     # Initialize plans
+#     kubectl exec -n ${NAMESPACE} "${FRONT_POD}" -- \
+#         npx tsx admin/init_plans.ts 2>/dev/null || log_warn "Failed to init plans"
     
-    # Initialize Dust apps  
-    kubectl exec -n ${NAMESPACE} "${FRONT_POD}" -- \
-        npx tsx admin/init_dust_apps.ts 2>/dev/null || log_warn "Failed to init dust apps"
+#     # Initialize Dust apps  
+#     kubectl exec -n ${NAMESPACE} "${FRONT_POD}" -- \
+#         npx tsx admin/init_dust_apps.ts 2>/dev/null || log_warn "Failed to init dust apps"
     
-    log_info "Dust apps initialized"
-else
-    log_warn "Cannot initialize Dust apps without front pod"
-fi
+#     log_info "Dust apps initialized"
+# else
+#     log_warn "Cannot initialize Dust apps without front pod"
+
 
 # =============================================================================
 # OUTPUT SUMMARY

@@ -83,6 +83,31 @@ export DISABLE_API_KEY_CHECK=true
 cargo run --bin oauth
 ```
 
+### OAuth service required env vars (important)
+
+The `oauth` service encrypts stored connection secrets (OAuth codes/tokens) at runtime.
+It **requires** `OAUTH_ENCRYPTION_KEY` (32 bytes, base64-encoded). If it is missing or invalid,
+the oauth server will panic during connection finalization (you may see errors like `Once panicked`).
+
+Generate a valid key locally:
+
+```bash
+# Option A: openssl
+openssl rand 32 | openssl base64 -A
+
+# Option B: python
+python - <<'PY'
+import os, base64
+print(base64.b64encode(os.urandom(32)).decode())
+PY
+```
+
+Then export it before running the oauth server:
+
+```bash
+export OAUTH_ENCRYPTION_KEY='<base64-value-from-above>'
+```
+
 ## Default agent
 
 if you want to disable default agents use the API, could be ran as part of the docker set up:

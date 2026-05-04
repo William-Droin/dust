@@ -86,6 +86,7 @@ export function useEventSource(
   const [isError, setIsError] = useState<Error | null>(null);
   const lastEvent = useRef<string | null>(null);
   const reconnectAttempts = useRef(0);
+  const onEventRef = useRef(onEventCallback);
 
   // We use a counter to trigger reconnects when the counter changes.
   const [reconnectCounter, setReconnectCounter] = useState(0);
@@ -97,11 +98,21 @@ export function useEventSource(
   // across renders and component lifecycles.
   const sourceManager = stableEventSourceManager;
 
+  useEffect(() => {
+    onEventRef.current = onEventCallback;
+  }, [onEventCallback]);
+
   const connect = useCallback(() => {
     const url = buildURL(lastEvent.current);
+    console.warn("[SSE] connect called", {
+      uniqueId,
+      url,
+      lastEvent: lastEvent.current,
+    });
     if (!url) {
       // If the url is empty, it means streaming is done.
       // Close any previous connections for this uniqueId and remove it from the manager.
+      console.warn("[SSE] connect aborted, no url", { uniqueId });
       sourceManager.remove(uniqueId);
 
       return null;
@@ -110,10 +121,15 @@ export function useEventSource(
     let source = sourceManager.get(uniqueId);
     // If the source is closed or doesn't exist, create a new one.
     if (!source || source.readyState === EventSource.CLOSED) {
+      console.warn("[SSE] creating new EventSource", { uniqueId, url });
       source = sourceManager.create(url, uniqueId);
     }
 
     source.onopen = () => {
+      console.warn("[SSE] connection opened", {
+        uniqueId,
+        readyState: source?.readyState,
+      });
       // If connected, reset the reconnect attempts and clear the reconnect timeout.
       reconnectAttempts.current = 0;
       if (reconnectTimeoutRef.current) {
@@ -123,6 +139,9 @@ export function useEventSource(
 
     source.onmessage = (event: MessageEvent<string>) => {
       if (event.data === "done") {
+        console.warn("[SSE] received done event, reconnecting", {
+          uniqueId,
+        });
         source.close();
 
         // Reconnect to the stream right away.
@@ -130,27 +149,41 @@ export function useEventSource(
         return;
       }
 
-      onEventCallback(event.data);
+      console.warn("[SSE] received message", {
+        uniqueId,
+        size: event.data.length,
+      });
+      onEventRef.current(event.data);
       lastEvent.current = event.data;
     };
 
     source.onerror = (event: Event) => {
-      console.error("EventSource error", event);
+      console.warn("[SSE] EventSource error", {
+        uniqueId,
+        readyState: source?.readyState,
+        event,
+      });
       source.close();
 
       reconnectAttempts.current++;
 
       if (reconnectAttempts.current >= MAX_RECONNECT_ATTEMPTS) {
-        console.log(
-          "Too many errors, not reconnecting. Please refresh the page."
+        console.warn(
+          "[SSE] Too many errors, not reconnecting. Please refresh the page.",
+          {
+            uniqueId,
+          }
         );
         setIsError(new Error("Too many errors, closing connection."));
 
         return;
       }
 
-      console.error(
-        `Connection error. Attempting to reconnect in ${RECONNECT_DELAY}ms`
+      console.warn(
+        `[SSE] Connection error. Attempting to reconnect in ${RECONNECT_DELAY}ms`,
+        {
+          uniqueId,
+        }
       );
 
       // Set timeout to reconnect after a delay.
@@ -160,7 +193,7 @@ export function useEventSource(
     };
 
     return source;
-  }, [buildURL, onEventCallback, uniqueId, sourceManager]);
+  }, [buildURL, uniqueId, sourceManager]);
 
   useEffect(() => {
     if (!isReadyToConsumeStream || isError) {

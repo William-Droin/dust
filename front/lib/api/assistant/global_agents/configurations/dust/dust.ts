@@ -35,6 +35,7 @@ import type {
   ReasoningEffort,
 } from "@app/types";
 import {
+  GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
   CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
   GEMINI_3_PRO_MODEL_CONFIG,
   getLargeWhitelistedModel,
@@ -577,7 +578,7 @@ export function _getDustGlobalAgent(
   return _getDustLikeGlobalAgent(auth, args, {
     agentId: GLOBAL_AGENTS_SID.DUST,
     name: "dust",
-    preferredModelConfiguration: CLAUDE_4_5_SONNET_DEFAULT_MODEL_CONFIG,
+    preferredModelConfiguration: GHS_OSS_120B_INSTRUCT_MODEL_CONFIG,
   });
 }
 

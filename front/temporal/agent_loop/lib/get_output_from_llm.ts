@@ -41,6 +41,10 @@ export async function getOutputFromLLMStream(
   const actions: Output["actions"] = [];
   let generation = "";
   let nativeChainOfThought = "";
+  const seenToolCalls = new Map<
+    string,
+    { arguments: string; name: string | null }
+  >();
 
   for await (const event of events) {
     timeToFirstEvent = Date.now() - start;
@@ -152,6 +156,38 @@ export async function getOutputFromLLMStream(
         content: { name, id, arguments: args },
         metadata: { thoughtSignature },
       } = event;
+
+      const serializedArguments = JSON.stringify(args);
+      const existingToolCall = seenToolCalls.get(id);
+
+      if (existingToolCall) {
+        logger.warn(
+          {
+            conversationId: conversation.sId,
+            existingArguments: existingToolCall.arguments,
+            existingName: existingToolCall.name,
+            functionCallId: id,
+            incomingArguments: serializedArguments,
+            incomingName: name,
+            modelId: model.modelId,
+            providerId: model.providerId,
+            step,
+            traceId: llm.getTraceId(),
+            workspaceId: conversation.owner.sId,
+          },
+          existingToolCall.arguments === serializedArguments &&
+            existingToolCall.name === name
+            ? "Duplicate tool_call event reached agent loop after provider normalization. Skipping duplicate."
+            : "Conflicting duplicate tool_call id reached agent loop. Keeping first occurrence."
+        );
+        continue;
+      }
+
+      seenToolCalls.set(id, {
+        arguments: serializedArguments,
+        name,
+      });
+
       actions.push({
         name,
         functionCallId: id,
@@ -161,7 +197,7 @@ export async function getOutputFromLLMStream(
         value: {
           id,
           name,
-          arguments: JSON.stringify(args),
+          arguments: serializedArguments,
           metadata: thoughtSignature ? { thoughtSignature } : undefined,
         },
       });

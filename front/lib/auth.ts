@@ -53,7 +53,17 @@ import {
 
 const { ACTIVATE_ALL_FEATURES_DEV = false } = process.env;
 
-const DUST_INTERNAL_EMAIL_REGEXP = /^[^@]+@dust\.tt$/;
+
+/**
+ * If set, this exact email address is considered "internal" for the purpose of superuser checks.
+ *
+ * This is primarily for self-hosting where you want a specific email address to be allowed to use
+ * Poke (superuser-only) endpoints.
+ *
+ * Example:
+ *   DUST_POKE_SUPERUSER_EMAIL=admin@yourcompany.com
+ */
+const DUST_POKE_SUPERUSER_EMAIL = process.env.DUST_POKE_SUPERUSER_EMAIL;
 
 export type AuthMethodType =
   | "system_api_key"
@@ -802,7 +812,8 @@ export class Authenticator {
 
     const { email, isDustSuperUser = false } = this._user;
     const isDustInternal =
-      isDevelopment() || DUST_INTERNAL_EMAIL_REGEXP.test(email);
+      isDevelopment() || (DUST_POKE_SUPERUSER_EMAIL !== undefined &&
+        email === DUST_POKE_SUPERUSER_EMAIL);
 
     return isDustInternal && isDustSuperUser;
   }

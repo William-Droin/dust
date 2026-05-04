@@ -2,23 +2,12 @@
  * This file contains functions related to sending emails, as well as the
  * content of emails themselves.
  */
-import sgMail from "@sendgrid/mail";
-
 import config from "@app/lib/api/config";
 import logger from "@app/logger/logger";
 import type { Result } from "@app/types";
-import { Err, isDevelopment, normalizeError, Ok } from "@app/types";
+import { Err, normalizeError, Ok } from "@app/types";
 
-let sgMailClient: sgMail.MailService | null = null;
-
-export function getSgMailClient(): any {
-  if (!sgMailClient) {
-    sgMail.setApiKey(config.getSendgridApiKey());
-    sgMailClient = sgMail;
-  }
-
-  return sgMail;
-}
+import { sendEmailRaw } from "./email_provider";
 
 export async function sendGitHubDeletionEmail(email: string): Promise<void> {
   await sendEmailWithTemplate({
@@ -144,26 +133,23 @@ export async function sendProactiveTrialCancelledEmail(
 
 // Avoid using this function directly, use sendEmailWithTemplate instead.
 export async function sendEmail(email: string, message: any) {
-  const msg = { ...message, to: email };
-
-  // In dev we want to make sure we don't send emails to real users.
-  // We prevent sending an email if it's not to a @dust.tt address.
-  if (isDevelopment() && !email.endsWith("@dust.tt")) {
-    logger.error(
-      { email, subject: message.subject },
-      "Prevented sending email in development mode to an external email."
-    );
-    return;
-  }
-
   try {
-    await getSgMailClient().send(msg);
-    logger.info({ email, subject: message.subject }, "Sending email");
+    // Maintain compatibility with legacy callsites that pass `reply_to`.
+    const replyTo = message.replyTo ?? message.reply_to;
+
+    await sendEmailRaw({
+      to: email,
+      from: {
+        name: message.from?.name,
+        email: message.from?.email,
+      },
+      replyTo,
+      subject: message.subject,
+      html: message.html ?? message.body ?? "",
+      text: message.text,
+    });
   } catch (error) {
-    logger.error(
-      { error, email, subject: message.subject },
-      "Error sending email."
-    );
+    logger.error({ error, email, subject: message.subject }, "Error sending email.");
   }
 }
 
@@ -187,20 +173,26 @@ export async function sendEmailWithTemplate({
   subject,
   body,
 }: sendEmailWithTemplateParams): Promise<Result<void, Error>> {
-  const templateId = config.getGenericEmailTemplate();
-  const message = {
-    to,
-    from,
-    replyTo,
-    templateId,
-    dynamic_template_data: {
-      subject,
-      body,
-    },
-  };
-
   try {
-    await sendEmail(to, message);
+    const html = `
+      <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color: #111;">
+        ${body}
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;" />
+        <p style="color:#666">This is an automated email. Please do not reply.</p>
+      </div>
+    `;
+
+    await sendEmailRaw({
+      to,
+      from: {
+        name: config.getSmtpFromName() ?? from.name,
+        email: config.getSmtpFromEmail() ?? from.email,
+      },
+      replyTo,
+      subject,
+      html,
+      text: body.replace(/<[^>]*>/g, ""),
+    });
     return new Ok(undefined);
   } catch (e) {
     logger.error(

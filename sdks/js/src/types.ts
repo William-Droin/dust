@@ -88,7 +88,11 @@ const ModelLLMIdSchema = FlexibleEnumSchema<
   | "openai/gpt-oss-120b" // ghs
 >();
 
-const EmbeddingProviderIdSchema = FlexibleEnumSchema<"openai" | "mistral">();
+// Keep in sync with front/types/assistant/models/embedding.ts
+// `ghs` is the default embedding provider id (OpenRouter-backed embeddings in core).
+const EmbeddingProviderIdSchema = FlexibleEnumSchema<
+  "openai" | "mistral" | "ghs"
+>();
 
 const ConnectorsAPIErrorTypeSchema = FlexibleEnumSchema<
   | "authorization_error"

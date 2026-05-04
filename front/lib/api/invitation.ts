@@ -1,4 +1,3 @@
-import sgMail from "@sendgrid/mail";
 import { escape } from "html-escaper";
 import { sign } from "jsonwebtoken";
 import type { Transaction } from "sequelize";
@@ -30,6 +29,7 @@ import type {
 import { Err, Ok, sanitizeString } from "@app/types";
 
 import { MembershipInvitationResource } from "../resources/membership_invitation_resource";
+import { sendEmailRaw } from "./email_provider";
 
 export async function getInvitation(
   auth: Authenticator,
@@ -127,21 +127,36 @@ export async function sendWorkspaceInvitationEmail(
   user: UserType,
   invitation: MembershipInvitationType
 ) {
-  // Send invite email.
-  const message = {
-    to: invitation.inviteEmail,
-    from: config.getSupportEmailAddress(),
-    templateId: config.getInvitationEmailTemplate(),
-    dynamic_template_data: {
-      inviteLink: getMembershipInvitationUrl(owner, invitation),
-      // Escape the name to prevent XSS attacks via injected script elements.
-      inviterName: escape(user.fullName),
-      workspaceName: owner.name,
-    },
-  };
+  const inviteLink = getMembershipInvitationUrl(owner, invitation);
+  const inviterName = escape(user.fullName);
+  const workspaceName = escape(owner.name);
 
-  sgMail.setApiKey(config.getSendgridApiKey());
-  await sgMail.send(message);
+  // Send invite email.
+  // Note: Gmail SMTP works well with simple HTML; no SendGrid template needed.
+  const subject = `You've been invited to ${owner.name} on Dust`;
+  const html = `
+    <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; font-size: 14px; color: #111;">
+      <p>${inviterName} invited you to join the workspace <b>${workspaceName}</b> on Dust.</p>
+      <p>
+        <a href="${inviteLink}">Accept invitation</a>
+      </p>
+      <p>If the link doesn't work, copy/paste this URL in your browser:</p>
+      <p><code>${inviteLink}</code></p>
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 16px 0;" />
+      <p style="color:#666">This is an automated email. Please do not reply.</p>
+    </div>
+  `;
+
+  await sendEmailRaw({
+    to: invitation.inviteEmail,
+    from: {
+      name: config.getSmtpFromName() ?? config.getSupportEmailAddress().name,
+      email: config.getSmtpFromEmail() ?? config.getSupportEmailAddress().email,
+    },
+    subject,
+    html,
+    text: `${user.fullName} invited you to join ${owner.name} on Dust.\n\nAccept invitation: ${inviteLink}`,
+  });
 }
 
 /**

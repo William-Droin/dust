@@ -87,12 +87,12 @@ TEMPORAL_RELOCATION_NAMESPACE=dust-relocation
 
 **Where to get**: 
 1. Go to [Elastic Cloud](https://cloud.elastic.co)
-2. Create a deployment in your preferred region (GCP europe-west1 recommended)
+2. Create a deployment in your preferred region (GCP europe-west4 recommended)
 3. Copy the Elasticsearch endpoint and credentials
 
 **Example**:
 ```
-ELASTICSEARCH_URL=https://my-deployment.es.europe-west1.gcp.cloud.es.io:9243
+ELASTICSEARCH_URL=https://my-deployment.es.europe-west4.gcp.cloud.es.io:9243
 ELASTICSEARCH_USERNAME=elastic
 ELASTICSEARCH_PASSWORD=xxxxxxxxxxxxxxxx
 ```
@@ -228,6 +228,8 @@ These are for the connectors you need (Slack, Notion, Google Drive).
 3. Navigate to "OAuth & Permissions"
 4. Copy the Client ID
 5. Add redirect URL: `https://YOUR_DOMAIN/oauth/slack/callback`
+https://YOUR_ACTUAL_DOMAIN.com/oauth/notion/finalize
+
 
 ### Notion
 
@@ -332,7 +334,7 @@ These are for the connectors you need (Slack, Notion, Google Drive).
 ```
 NEXT_PUBLIC_DUST_CLIENT_FACING_URL=https://dust.yourdomain.com
 NEXT_PUBLIC_VIZ_URL=https://viz.yourdomain.com
-DUST_REGION=europe-west1
+DUST_REGION=europe-west4
 ```
 
 ### Internal Service URLs
@@ -361,6 +363,7 @@ OAUTH_API=http://oauth.dust-app.svc.cluster.local:3006
 | `DUST_INVITE_TOKEN_SECRET` | front | ✅ | Secret for invitation tokens |
 | `DUST_REGISTRY_SECRET` | front | ✅ | Registry secret |
 | `REGION_RESOLVER_SECRET` | front | ❌ | Multi-region resolver secret |
+| `DUST_POKE_SUPERUSER_EMAIL` | front | ❌ | Exact email allowed to use Poke (superuser-only) endpoints in self-hosted setups |
 
 **How to generate**:
 ```bash
@@ -377,6 +380,20 @@ openssl rand -hex 32
 | `DUST_APPS_INTERACTIVE_CONTENT_DATASOURCE_VIEW_ID` | front | ❌ | Interactive content view |
 | `DUST_DEVELOPMENT_SYSTEM_API_KEY` | front | ❌ | Development API key |
 | `DUST_DEVELOPMENT_WORKSPACE_ID` | front | ❌ | Development workspace |
+
+### Poke (Superuser tooling)
+
+Poke API routes (`/api/poke/...`) are intended for superusers only.
+
+By default, Dust treats `@dust.tt` emails as "internal" for the superuser check.
+For self-hosting, you can allow **one specific email address** (exact match) to be treated as
+internal for Poke access:
+
+```bash
+DUST_POKE_SUPERUSER_EMAIL=admin@yourcompany.com
+```
+
+Note: the user must still have `isDustSuperUser=true` in the database.
 
 ---
 
@@ -431,6 +448,8 @@ DUST_REGION=
 #### oauth
 ```bash
 OAUTH_DATABASE_URI=
+OAUTH_ENCRYPTION_KEY=
+REDIS_URI=
 ```
 
 #### front

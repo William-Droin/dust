@@ -104,6 +104,19 @@ const _authMiddlewareWebhooks = (
     const parts = req.path.split("/");
 
     if (parts.includes(DUST_CONNECTORS_WEBHOOKS_SECRET) === false) {
+      const sanitizedPath = req.path.replace(
+        DUST_CONNECTORS_WEBHOOKS_SECRET,
+        "<redacted>"
+      );
+      logger.error(
+        {
+          path: sanitizedPath,
+          partsCount: parts.length,
+          webhookSecretLength: DUST_CONNECTORS_WEBHOOKS_SECRET.length,
+          webhookSecretMatched: false,
+        },
+        "Webhook auth failed: invalid webhook secret in path"
+      );
       return apiError(req, res, {
         api_error: {
           type: "authorization_error",

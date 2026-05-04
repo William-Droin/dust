@@ -337,7 +337,7 @@ impl SearchStore for ElasticsearchSearchStore {
             .indices_boost(DATA_SOURCE_INDEX_NAME, DATA_SOURCE_BOOST)
             .sort(sort);
 
-        if let Some(cursor) = options.cursor {
+        if let Some(cursor) = options.cursor.filter(|cursor| !cursor.trim().is_empty()) {
             let decoded = URL_SAFE.decode(cursor)?;
             let json_str = String::from_utf8(decoded)?;
             let search_after: Vec<serde_json::Value> = serde_json::from_str(&json_str)?;
@@ -371,6 +371,7 @@ impl SearchStore for ElasticsearchSearchStore {
             .body(search)
             .send()
             .await?;
+        let response_status = response.status_code().as_u16();
 
         let search_duration = utils::now() - search_start;
         info!(
@@ -389,9 +390,48 @@ impl SearchStore for ElasticsearchSearchStore {
             u64,
             bool,
             Option<String>,
-        ) = match response.status_code().is_success() {
+        ) = match response_status < 400 {
             true => {
-                let response_body = response.json::<serde_json::Value>().await?;
+                let response_text = match response.text().await {
+                    Ok(body) => body,
+                    Err(err) => {
+                        error!(
+                            error = %err,
+                            status = response_status,
+                            data_source_id = data_source_id,
+                            data_source_filter = data_source_filter.as_ref().map(|v| v.join(", ")),
+                            parent_id = parent_id_log,
+                            node_ids = node_ids_log,
+                            "[ElasticsearchSearchStore] Failed to read search response body"
+                        );
+                        return Err(anyhow::anyhow!(
+                            "Failed to read search response body (status={}): {}",
+                            response_status,
+                            err
+                        ));
+                    }
+                };
+
+                let response_body = match serde_json::from_str::<serde_json::Value>(&response_text) {
+                    Ok(body) => body,
+                    Err(err) => {
+                        error!(
+                            error = %err,
+                            status = response_status,
+                            response_body = response_text,
+                            data_source_id = data_source_id,
+                            data_source_filter = data_source_filter.as_ref().map(|v| v.join(", ")),
+                            parent_id = parent_id_log,
+                            node_ids = node_ids_log,
+                            "[ElasticsearchSearchStore] Failed to parse search response body"
+                        );
+                        return Err(anyhow::anyhow!(
+                            "Failed to parse search response body (status={}): {}",
+                            response_status,
+                            err
+                        ));
+                    }
+                };
                 let hits = response_body["hits"]["hits"].as_array().unwrap();
                 // Safe to unwrap because it's always set as per the official documentation.
                 let hit_count = response_body["hits"]["total"]["value"].as_u64().unwrap();
@@ -420,8 +460,54 @@ impl SearchStore for ElasticsearchSearchStore {
                 (items, hit_count, hit_count_is_accurate, next_cursor)
             }
             false => {
-                let error = response.json::<serde_json::Value>().await?;
-                return Err(anyhow::anyhow!("Failed to search nodes: {}", error));
+                let error_text = match response.text().await {
+                    Ok(body) => body,
+                    Err(err) => {
+                        error!(
+                            error = %err,
+                            status = response_status,
+                            data_source_id = data_source_id,
+                            data_source_filter = data_source_filter.as_ref().map(|v| v.join(", ")),
+                            parent_id = parent_id_log,
+                            node_ids = node_ids_log,
+                            "[ElasticsearchSearchStore] Failed to read error response body"
+                        );
+                        String::new()
+                    }
+                };
+
+                let error_body = match serde_json::from_str::<serde_json::Value>(&error_text) {
+                    Ok(body) => Some(body),
+                    Err(err) => {
+                        error!(
+                            error = %err,
+                            status = response_status,
+                            response_body = error_text,
+                            data_source_id = data_source_id,
+                            data_source_filter = data_source_filter.as_ref().map(|v| v.join(", ")),
+                            parent_id = parent_id_log,
+                            node_ids = node_ids_log,
+                            "[ElasticsearchSearchStore] Failed to parse error response body"
+                        );
+                        None
+                    }
+                };
+
+                error!(
+                    status = response_status,
+                    error_body = ?error_body,
+                    data_source_id = data_source_id,
+                    data_source_filter = data_source_filter.as_ref().map(|v| v.join(", ")),
+                    parent_id = parent_id_log,
+                    node_ids = node_ids_log,
+                    "[ElasticsearchSearchStore] Elasticsearch search request failed"
+                );
+
+                return Err(anyhow::anyhow!(
+                    "Failed to search nodes (status={}): error_body={:?}",
+                    response_status,
+                    error_body
+                ));
             }
         };
 
@@ -1097,45 +1183,121 @@ impl ElasticsearchSearchStore {
         }
 
         // Convert to vectors.
-        let parent_ids: Vec<_> = parent_ids.into_iter().collect();
-        let data_source_ids: Vec<_> = data_source_ids.into_iter().collect();
+        let parent_ids: Vec<String> = parent_ids.into_iter().cloned().collect();
+        let data_source_ids: Vec<String> = data_source_ids.into_iter().cloned().collect();
 
-        // Scope the query to the internal data source ids of the nodes to avoid leaking data
-        // from other data sources.
-        let parent_titles_search = Search::new()
-            .query(Query::bool().filter(vec![
-                Query::terms("node_id", parent_ids),
-                Query::terms("data_source_internal_id", data_source_ids),
-            ]))
-            .source(vec!["data_source_internal_id", "node_id", "title"]);
-
-        let parent_titles_response = self
-            .client
-            .search(SearchParts::Index(&[DATA_SOURCE_NODE_INDEX_NAME]))
-            .body(parent_titles_search)
-            .send()
-            .await?;
-
-        // Process parent titles results
         let parent_titles_map: HashMap<(String, String), String> =
-            if parent_titles_response.status_code().is_success() {
-                let response_body = parent_titles_response.json::<serde_json::Value>().await?;
-                response_body["hits"]["hits"]
-                    .as_array()
-                    .map(|hits| {
-                        hits.iter()
-                            .filter_map(|hit| {
-                                let node_id = hit["_source"]["node_id"].as_str()?;
-                                let ds_id = hit["_source"]["data_source_internal_id"].as_str()?;
-                                let title = hit["_source"]["title"].as_str()?;
-                                Some(((node_id.to_string(), ds_id.to_string()), title.to_string()))
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_default()
+            if parent_ids.is_empty() || data_source_ids.is_empty() {
+                HashMap::new()
             } else {
-                let error = parent_titles_response.json::<serde_json::Value>().await?;
-                return Err(anyhow::anyhow!("Failed to fetch parent titles: {}", error));
+                // Scope the query to the internal data source ids of the nodes to avoid leaking
+                // data from other data sources.
+                let parent_titles_search = Search::new()
+                    .query(Query::bool().filter(vec![
+                        Query::terms("node_id", &parent_ids),
+                        Query::terms("data_source_internal_id", &data_source_ids),
+                    ]))
+                    .source(vec!["data_source_internal_id", "node_id", "title"]);
+
+                let parent_titles_response = self
+                    .client
+                    .search(SearchParts::Index(&[DATA_SOURCE_NODE_INDEX_NAME]))
+                    .body(parent_titles_search)
+                    .send()
+                    .await?;
+                let response_status = parent_titles_response.status_code().as_u16();
+
+                if response_status < 400 {
+                    let response_text = match parent_titles_response.text().await {
+                        Ok(body) => body,
+                        Err(err) => {
+                            error!(
+                                error = %err,
+                                status = response_status,
+                                parent_ids = parent_ids.join(", "),
+                                data_source_ids = data_source_ids.join(", "),
+                                "[ElasticsearchSearchStore] Failed to read parent titles response body"
+                            );
+                            return Err(anyhow::anyhow!(
+                                "Failed to read parent titles response body (status={}): {}",
+                                response_status,
+                                err
+                            ));
+                        }
+                    };
+
+                    let response_body =
+                        match serde_json::from_str::<serde_json::Value>(&response_text) {
+                            Ok(body) => body,
+                            Err(err) => {
+                                error!(
+                                    error = %err,
+                                    status = response_status,
+                                    response_body = response_text,
+                                    parent_ids = parent_ids.join(", "),
+                                    data_source_ids = data_source_ids.join(", "),
+                                    "[ElasticsearchSearchStore] Failed to parse parent titles response body"
+                                );
+                                return Err(anyhow::anyhow!(
+                                    "Failed to parse parent titles response body (status={}): {}",
+                                    response_status,
+                                    err
+                                ));
+                            }
+                        };
+
+                    response_body["hits"]["hits"]
+                        .as_array()
+                        .map(|hits| {
+                            hits.iter()
+                                .filter_map(|hit| {
+                                    let node_id = hit["_source"]["node_id"].as_str()?;
+                                    let ds_id = hit["_source"]["data_source_internal_id"].as_str()?;
+                                    let title = hit["_source"]["title"].as_str()?;
+                                    Some((
+                                        (node_id.to_string(), ds_id.to_string()),
+                                        title.to_string(),
+                                    ))
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default()
+                } else {
+                    let error_text = match parent_titles_response.text().await {
+                        Ok(body) => body,
+                        Err(err) => {
+                            error!(
+                                error = %err,
+                                status = response_status,
+                                parent_ids = parent_ids.join(", "),
+                                data_source_ids = data_source_ids.join(", "),
+                                "[ElasticsearchSearchStore] Failed to read parent titles error response body"
+                            );
+                            String::new()
+                        }
+                    };
+
+                    let error_body = match serde_json::from_str::<serde_json::Value>(&error_text) {
+                        Ok(body) => Some(body),
+                        Err(err) => {
+                            error!(
+                                error = %err,
+                                status = response_status,
+                                response_body = error_text,
+                                parent_ids = parent_ids.join(", "),
+                                data_source_ids = data_source_ids.join(", "),
+                                "[ElasticsearchSearchStore] Failed to parse parent titles error response body"
+                            );
+                            None
+                        }
+                    };
+
+                    return Err(anyhow::anyhow!(
+                        "Failed to fetch parent titles (status={}): error_body={:?}",
+                        response_status,
+                        error_body
+                    ));
+                }
             };
 
         // Create CoreContentNodes using the above results

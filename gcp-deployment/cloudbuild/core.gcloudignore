@@ -1,0 +1,15 @@
+# Upload only the files needed by the core/oauth Cloud Build job.
+# Both Dockerfiles copy from /core and are selected via -f dockerfiles/*.Dockerfile.
+**
+
+!core/
+!core/**
+!dockerfiles/
+!dockerfiles/core.Dockerfile
+!dockerfiles/oauth.Dockerfile
+!gcp-deployment/
+!gcp-deployment/cloudbuild/
+!gcp-deployment/cloudbuild/cloudbuild-core.yaml
+!gcp-deployment/cloudbuild/core.gcloudignore
+!.dockerignore
+!.gitignore

@@ -61,6 +61,7 @@ export function registerListTool(
         nextPageCursor,
       }) => {
         const coreAPI = new CoreAPI(config.getCoreAPIConfig(), logger);
+        const normalizedNextPageCursor = nextPageCursor || undefined;
         const fetchResult = await getAgentDataSourceConfigurations(
           auth,
           dataSources
@@ -80,7 +81,7 @@ export function registerListTool(
         }
 
         const options = {
-          cursor: nextPageCursor,
+          cursor: normalizedNextPageCursor,
           limit,
           sort: sortBy
             ? [

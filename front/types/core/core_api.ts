@@ -54,6 +54,13 @@ export const EMBEDDING_CONFIGS: Record<EmbeddingProviderIdType, EmbedderType> =
       splitter_id: "base_v0",
       max_chunk_size: MAX_CHUNK_SIZE,
     },
+    ghs: {
+      // OpenRouter embeddings (core provider_id = "ghs").
+      model_id: "qwen/qwen3-embedding-4b",
+      provider_id: "ghs",
+      splitter_id: "base_v0",
+      max_chunk_size: MAX_CHUNK_SIZE,
+    },
   } as const;
 
 export type CoreAPIError = {

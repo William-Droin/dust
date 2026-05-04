@@ -1,0 +1,13 @@
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: front-backendconfig
+  namespace: dust-app
+spec:
+  # Increase backend timeout to support long-lived Server-Sent Events (EventSource)
+  # connections used by the Assistant conversation streams.
+  #
+  # The app itself keeps conversation event streams open up to ~180s (see
+  # front/lib/api/assistant/pubsub.ts). If the load balancer times out earlier
+  # (e.g. ~30s), the browser will log EventSource errors and reconnect.
+  timeoutSec: 600

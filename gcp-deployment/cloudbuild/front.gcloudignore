@@ -1,0 +1,36 @@
+# Upload only the files needed by the front/front-workers Cloud Build job.
+# The Dockerfile builds from /front and /sdks/js, and front's dependency install
+# also references the local eslint-plugin-dust package.
+**
+
+!front/
+!front/**
+!sdks/
+!sdks/js/
+!sdks/js/**
+!eslint-plugin-dust/
+!eslint-plugin-dust/**
+!dockerfiles/
+!dockerfiles/front.Dockerfile
+!gcp-deployment/
+!gcp-deployment/cloudbuild/
+!gcp-deployment/cloudbuild/cloudbuild-front.yaml
+!gcp-deployment/cloudbuild/front.gcloudignore
+!.dockerignore
+!.gitignore
+
+# Exclude generated artifacts and installed dependencies from the upload.
+front/node_modules/
+front/node_modules/**
+front/.next/
+front/.next/**
+front/out/
+front/out/**
+front/build/
+front/build/**
+front/coverage/
+front/coverage/**
+sdks/js/node_modules/
+sdks/js/node_modules/**
+sdks/js/dist/
+sdks/js/dist/**
